@@ -22,12 +22,12 @@ println!("float={:?}", float);    // 1.235
 
 You may be asking: where is the actual parser? Due to variation in float formats, and the goal of integrating utility for various data-interchange language parsers, such functionality would be beyond the scope of this library.
 
-For example, the following floats valid for Rust strings, but is invalid in JSON or TOML:
+For example, the following float is valid in Rust strings, but is invalid in JSON or TOML:
 ```json
 1.e7
 ```
 
-Therefore, to use the library, you need functionality that extracts the significant digits to pass to `create_float`. Please see [simple-example](examples/simple.rs) for a simple example on how to use minimal-lexical as a parser.
+Therefore, to use the library, you need functionality that extracts the significant digits to pass to `create_float`. Please see [simple-example](examples/simple.rs) for a simple, annotated example on how to use minimal-lexical as a parser.
 
 # License
 

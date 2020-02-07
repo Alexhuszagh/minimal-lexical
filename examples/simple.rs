@@ -1,4 +1,49 @@
+//! A simple example on how to use minimal_lexical within parser framework.
+//!
+//! This works on input bytes, however, it could be easily adapted to use
+//! `io::Read`, or any iterator over bytes. Since floats can only include
+//! ASCII characters, it will work with UTF-8 encoded data and return
+//! remaining bytes properly on UTF-8 boundaries.
+//!
+//! # License
+//!
+//! This is example is unlicensed, so please adapt the code into your
+//! own project. It is meant to show how to implement a float parser
+//! easily and efficiently, and how to adapt it for specialized use-cases.
+//!
+//! ```text
+//! This is free and unencumbered software released into the public domain.
+//!
+//! Anyone is free to copy, modify, publish, use, compile, sell, or
+//! distribute this software, either in source code form or as a compiled
+//! binary, for any purpose, commercial or non-commercial, and by any
+//! means.
+//!
+//! In jurisdictions that recognize copyright laws, the author or authors
+//! of this software dedicate any and all copyright interest in the
+//! software to the public domain. We make this dedication for the benefit
+//! of the public at large and to the detriment of our heirs and
+//! successors. We intend this dedication to be an overt act of
+//! relinquishment in perpetuity of all present and future rights to this
+//! software under copyright law.
+//!
+//! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+//! EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//! MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//! IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+//! OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+//! ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+//! OTHER DEALINGS IN THE SOFTWARE.
+//!
+//! For more information, please refer to <http://unlicense.org/>
+//! ```
+
 extern crate minimal_lexical;
+
+// HELPERS
+// -------
+
+// These functions are simple, resuable componetns
 
 /// Find and parse sign and get remaining bytes.
 #[inline]
@@ -54,8 +99,9 @@ fn split_at_index<'a>(digits: &'a [u8], index: usize)
     (&digits[..index], &digits[index..])
 }
 
-// Consume until a an invalid digit is found.
-// Does not consume any digit separators.
+/// Consume until a an invalid digit is found.
+///
+/// - `digits`      - Slice containing 0 or more digits.
 #[inline]
 fn consume_digits<'a>(digits: &'a [u8])
     -> (&'a [u8], &'a [u8])
@@ -68,7 +114,10 @@ fn consume_digits<'a>(digits: &'a [u8])
     split_at_index(digits, index)
 }
 
-// Convert usize into i32 without overflow.
+/// Convert usize into i32 without overflow.
+///
+/// This is needed to ensure when adjusting the exponent relative to
+/// the mantissa we do not overflow for comically-long exponents.
 #[inline]
 fn into_i32(value: usize) -> i32 {
     if value > i32::max_value() as usize {
@@ -78,7 +127,13 @@ fn into_i32(value: usize) -> i32 {
     }
 }
 
-// Parse the significant digits of the float.
+// PARSERS
+// -------
+
+/// Parse the significant digits of the float.
+///
+/// * `integer`     - Slice containing the integer digits.
+/// * `fraction`    - Slice containing the fraction digits.
 fn parse_mantissa(integer: &[u8], fraction: &[u8])
     -> (u64, usize)
 {
@@ -96,7 +151,10 @@ fn parse_mantissa(integer: &[u8], fraction: &[u8])
     (value, 0)
 }
 
-// Parse the exponent of the float.
+/// Parse the exponent of the float.
+///
+/// * `exponent`    - Slice containing the exponent digits.
+/// * `is_positive` - If the exponent sign is positive.
 fn parse_exponent(exponent: &[u8], is_positive: bool) -> i32 {
     // Parse the sign bit or current data.
     let mut value: i32 = 0;
@@ -122,7 +180,9 @@ fn parse_exponent(exponent: &[u8], is_positive: bool) -> i32 {
     value
 }
 
-// Parse float from input bytes, returning the float and the remaining bytes.
+/// Parse float from input bytes, returning the float and the remaining bytes.
+///
+/// * `bytes`    - Array of bytes leading with float-data.
 fn parse_float<'a, F>(bytes: &'a [u8])
     -> (F, &'a [u8])
     where F: minimal_lexical::Float
