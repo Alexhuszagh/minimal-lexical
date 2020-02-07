@@ -1,4 +1,6 @@
-use std::mem;
+//! Bit-shift helpers.
+
+use crate::lib::mem;
 use super::float::ExtendedFloat;
 
 // Shift extended-precision float right `shift` bytes.

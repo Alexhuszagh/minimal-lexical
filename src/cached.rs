@@ -1,3 +1,5 @@
+//! Cached powers trait for extended-precision floats.
+
 use super::cached_float80;
 use super::float::ExtendedFloat;
 
@@ -65,7 +67,7 @@ impl ModeratePathPowers {
 // CACHED EXTENDED POWERS
 
 /// Cached powers as a trait for a floating-point type.
-pub(super) trait ModeratePathCache {
+pub(crate) trait ModeratePathCache {
     /// Get cached powers.
     fn get_powers() -> &'static ModeratePathPowers;
 }

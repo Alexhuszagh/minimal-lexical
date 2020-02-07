@@ -1,6 +1,5 @@
 // FLOAT TYPE
 
-use super::convert::*;
 use super::num::*;
 use super::rounding::*;
 use super::shift::*;
@@ -10,7 +9,7 @@ use super::shift::*;
 /// Private implementation, exposed only for testing purposes.
 #[doc(hidden)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct ExtendedFloat {
+pub(crate) struct ExtendedFloat {
     /// Mantissa for the extended-precision float.
     pub mant: u64,
     /// Binary exponent for the extended-precision float.
@@ -32,7 +31,7 @@ impl ExtendedFloat {
     ///     1. Non-signed multiplication of mantissas (requires 2x as many bits as input).
     ///     2. Normalization of the result (not done here).
     ///     3. Addition of exponents.
-    pub fn mul(&self, b: &ExtendedFloat) -> ExtendedFloat {
+    pub(crate) fn mul(&self, b: &ExtendedFloat) -> ExtendedFloat {
         // Logic check, values must be decently normalized prior to multiplication.
         debug_assert!((self.mant & u64::HIMASK != 0) && (b.mant & u64::HIMASK != 0));
 
@@ -61,7 +60,7 @@ impl ExtendedFloat {
     /// Multiply in-place, as if by `a*b`.
     ///
     /// The result is not normalized.
-    pub fn imul(&mut self, b: &ExtendedFloat) {
+    pub(crate) fn imul(&mut self, b: &ExtendedFloat) {
         *self = self.mul(b);
     }
 
@@ -73,7 +72,7 @@ impl ExtendedFloat {
     /// itself is 0.
     ///
     /// Get the number of bytes shifted.
-    pub fn normalize(&mut self) -> u32 {
+    pub(crate) fn normalize(&mut self) -> u32 {
         // Note:
         // Using the cltz intrinsic via leading_zeros is way faster (~10x)
         // than shifting 1-bit at a time, via while loop, and also way
@@ -104,8 +103,39 @@ impl ExtendedFloat {
     // INTO
 
     /// Convert into lower-precision native float.
-    pub fn into_float<F: Float>(mut self) -> F {
+    pub(crate) fn into_float<F: Float>(mut self) -> F {
         self.round_to_native::<F>();
         into_float(self)
     }
 }
+
+// INTO FLOAT
+
+// Export extended-precision float to native float.
+//
+// The extended-precision float must be in native float representation,
+// with overflow/underflow appropriately handled.
+pub(crate) fn into_float<F>(fp: ExtendedFloat) -> F
+    where F: Float
+{
+    // Export floating-point number.
+    if fp.mant == 0 || fp.exp < F::DENORMAL_EXPONENT {
+        // sub-denormal, underflow
+        F::ZERO
+    } else if fp.exp >= F::MAX_EXPONENT {
+        // overflow
+        F::from_bits(F::INFINITY_BITS)
+    } else {
+        // calculate the exp and fraction bits, and return a float from bits.
+        let exp: u64;
+        if (fp.exp == F::DENORMAL_EXPONENT) && (fp.mant & F::HIDDEN_BIT_MASK.as_u64()) == 0 {
+            exp = 0;
+        } else {
+            exp = (fp.exp + F::EXPONENT_BIAS).as_u64();
+        }
+        let exp = exp << F::MANTISSA_SIZE;
+        let mant = fp.mant & F::MANTISSA_MASK.as_u64();
+        F::from_bits(F::Unsigned::as_cast(mant | exp))
+    }
+}
+

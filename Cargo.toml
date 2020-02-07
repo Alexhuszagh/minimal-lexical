@@ -1,4 +1,13 @@
 [package]
 authors = ["Alex Huszagh <ahuszagh@gmail.com>"]
+categories = ["parsing", "no-std"]
+description = "Float parsing conversion routines."
+edition = "2018"
 name = "minimal_lexical"
 version = "0.0.1"
+readme = "README.md"
+repository = "https://github.com/Alexhuszagh/minimal-lexical"
+
+[features]
+default = ["std"]
+std = []
