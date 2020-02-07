@@ -1,0 +1,4 @@
+[package]
+authors = ["Alex Huszagh <ahuszagh@gmail.com>"]
+name = "minimal_lexical"
+version = "0.0.1"

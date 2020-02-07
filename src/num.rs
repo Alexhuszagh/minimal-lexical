@@ -1,0 +1,379 @@
+use std::ops;
+
+pub trait AsPrimitive:
+    Sized +
+    Copy +
+    PartialEq +
+    PartialOrd +
+    Send +
+    Sync
+{
+    fn as_u8(self) -> u8;
+    fn as_u16(self) -> u16;
+    fn as_u32(self) -> u32;
+    fn as_u64(self) -> u64;
+    fn as_u128(self) -> u128;
+    fn as_usize(self) -> usize;
+    fn as_i8(self) -> i8;
+    fn as_i16(self) -> i16;
+    fn as_i32(self) -> i32;
+    fn as_i64(self) -> i64;
+    fn as_i128(self) -> i128;
+    fn as_isize(self) -> isize;
+    fn as_f32(self) -> f32;
+    fn as_f64(self) -> f64;
+}
+
+macro_rules! as_primitive_impl {
+    ($($t:tt)*) => ($(
+        impl AsPrimitive for $t {
+            #[inline]
+            fn as_u8(self) -> u8 {
+                self as u8
+            }
+
+            #[inline]
+            fn as_u16(self) -> u16 {
+                self as u16
+            }
+
+            #[inline]
+            fn as_u32(self) -> u32 {
+                self as u32
+            }
+
+            #[inline]
+            fn as_u64(self) -> u64 {
+                self as u64
+            }
+
+            #[inline]
+            fn as_u128(self) -> u128 {
+                self as u128
+            }
+
+            #[inline]
+            fn as_usize(self) -> usize {
+                self as usize
+            }
+
+            #[inline]
+            fn as_i8(self) -> i8 {
+                self as i8
+            }
+
+            #[inline]
+            fn as_i16(self) -> i16 {
+                self as i16
+            }
+
+            #[inline]
+            fn as_i32(self) -> i32 {
+                self as i32
+            }
+
+            #[inline]
+            fn as_i64(self) -> i64 {
+                self as i64
+            }
+
+            #[inline]
+            fn as_i128(self) -> i128 {
+                self as i128
+            }
+
+            #[inline]
+            fn as_isize(self) -> isize {
+                self as isize
+            }
+
+            #[inline]
+            fn as_f32(self) -> f32 {
+                self as f32
+            }
+
+            #[inline]
+            fn as_f64(self) -> f64 {
+                self as f64
+            }
+        }
+    )*)
+}
+
+as_primitive_impl! { u8 u16 u32 u64 u128 usize i8 i16 i32 i64 i128 isize f32 f64 }
+
+/// An interface for casting between machine scalars.
+pub trait AsCast: AsPrimitive {
+    /// Creates a number from another value that can be converted into
+    /// a primitive via the `AsPrimitive` trait.
+    fn as_cast<N: AsPrimitive>(n: N) -> Self;
+}
+
+macro_rules! as_cast_impl {
+    ($t:ty, $meth:ident) => {
+        impl AsCast for $t {
+            #[inline]
+            fn as_cast<N: AsPrimitive>(n: N) -> $t {
+                n.$meth()
+            }
+        }
+    };
+}
+
+as_cast_impl!(u8, as_u8);
+as_cast_impl!(u16, as_u16);
+as_cast_impl!(u32, as_u32);
+as_cast_impl!(u64, as_u64);
+as_cast_impl!(u128, as_u128);
+as_cast_impl!(usize, as_usize);
+as_cast_impl!(i8, as_i8);
+as_cast_impl!(i16, as_i16);
+as_cast_impl!(i32, as_i32);
+as_cast_impl!(i64, as_i64);
+as_cast_impl!(i128, as_i128);
+as_cast_impl!(isize, as_isize);
+as_cast_impl!(f32, as_f32);
+as_cast_impl!(f64, as_f64);
+
+pub trait Number:
+    AsCast +
+    ops::Add<Output=Self> +
+    ops::AddAssign +
+    ops::Div<Output=Self> +
+    ops::DivAssign +
+    ops::Mul<Output=Self> +
+    ops::MulAssign +
+    ops::Rem<Output=Self> +
+    ops::RemAssign +
+    ops::Sub<Output=Self> +
+    ops::SubAssign
+{}
+
+macro_rules! number_impl {
+    ($($t:tt)*) => ($(
+        impl Number for $t {
+        }
+    )*)
+}
+
+number_impl! { u8 u16 u32 u64 u128 usize i8 i16 i32 i64 i128 isize f32 f64 }
+
+pub trait Integer:
+    Number +
+    ops::BitAnd<Output=Self> +
+    ops::BitAndAssign
+{
+    const ZERO: Self;
+}
+
+macro_rules! integer_impl {
+    ($($t:tt)*) => ($(
+        impl Integer for $t {
+            const ZERO: $t = 0;
+        }
+    )*)
+}
+
+integer_impl! { u8 u16 u32 u64 u128 usize i8 i16 i32 i64 i128 isize }
+
+pub trait UnsignedInteger: Integer {}
+
+macro_rules! unsigned_integer_impl {
+    ($($t:ty)*) => ($(
+        impl UnsignedInteger for $t {}
+    )*)
+}
+
+unsigned_integer_impl! { u8 u16 u32 u64 u128 usize }
+
+/// Type trait for the mantissa type.
+pub trait Mantissa: UnsignedInteger {
+    /// Mask for the left-most bit, to check if the value is normalized.
+    const NORMALIZED_MASK: Self;
+    /// Mask to extract the high bits from the integer.
+    const HIMASK: Self;
+    /// Mask to extract the low bits from the integer.
+    const LOMASK: Self;
+    /// Full size of the integer, in bits.
+    const FULL: i32;
+    /// Half size of the integer, in bits.
+    const HALF: i32 = Self::FULL / 2;
+}
+
+impl Mantissa for u64 {
+    const NORMALIZED_MASK: u64  = 0x8000000000000000;
+    const HIMASK: u64           = 0xFFFFFFFF00000000;
+    const LOMASK: u64           = 0x00000000FFFFFFFF;
+    const FULL: i32             = 64;
+}
+
+/// Get exact exponent limit for radix.
+pub trait Float: Number {
+    /// Unsigned type of the same size.
+    type Unsigned: UnsignedInteger;
+
+    const ZERO: Self;
+
+    // MASKS
+
+    /// Bitmask for the sign bit.
+    const SIGN_MASK: Self::Unsigned;
+    /// Bitmask for the exponent, including the hidden bit.
+    const EXPONENT_MASK: Self::Unsigned;
+    /// Bitmask for the hidden bit in exponent, which is an implicit 1 in the fraction.
+    const HIDDEN_BIT_MASK: Self::Unsigned;
+    /// Bitmask for the mantissa (fraction), excluding the hidden bit.
+    const MANTISSA_MASK: Self::Unsigned;
+
+    // PROPERTIES
+
+    /// Positive infinity as bits.
+    const INFINITY_BITS: Self::Unsigned;
+    /// Positive infinity as bits.
+    const NEGATIVE_INFINITY_BITS: Self::Unsigned;
+    /// Size of the significand (mantissa) without hidden bit.
+    const MANTISSA_SIZE: i32;
+    /// Bias of the exponet
+    const EXPONENT_BIAS: i32;
+    /// Exponent portion of a denormal float.
+    const DENORMAL_EXPONENT: i32;
+    /// Maximum exponent value in float.
+    const MAX_EXPONENT: i32;
+
+    // ROUNDING
+
+    /// Default number of bits to shift (or 64 - mantissa size - 1).
+    const DEFAULT_SHIFT: i32;
+    /// Mask to determine if a full-carry occurred (1 in bit above hidden bit).
+    const CARRY_MASK: u64;
+
+    /// Get min and max exponent limits (exact) from radix.
+    fn exponent_limit() -> (i32, i32);
+
+    /// Get the number of digits that can be shifted from exponent to mantissa.
+    fn mantissa_limit() -> i32;
+
+    // Re-exported methods from std.
+    fn powi(self, n: i32) -> Self;
+    fn from_bits(u: Self::Unsigned) -> Self;
+    fn to_bits(self) -> Self::Unsigned;
+
+    /// Returns true if the float is a denormal.
+    #[inline]
+    fn is_denormal(self) -> bool {
+        self.to_bits() & Self::EXPONENT_MASK == Self::Unsigned::ZERO
+    }
+
+    /// Get exponent component from the float.
+    #[inline]
+    fn exponent(self) -> i32 {
+        if self.is_denormal() {
+            return Self::DENORMAL_EXPONENT;
+        }
+
+        let bits = self.to_bits();
+        let biased_e: i32 = (bits & Self::EXPONENT_MASK).as_i32() >> Self::MANTISSA_SIZE;
+        biased_e - Self::EXPONENT_BIAS
+    }
+
+    /// Get mantissa (significand) component from float.
+    #[inline]
+    fn mantissa(self) -> Self::Unsigned {
+        let bits = self.to_bits();
+        let s = bits & Self::MANTISSA_MASK;
+        if !self.is_denormal() {
+            s + Self::HIDDEN_BIT_MASK
+        } else {
+            s
+        }
+    }
+}
+
+impl Float for f32 {
+    type Unsigned = u32;
+
+    const ZERO: f32 = 0.0;
+
+    const SIGN_MASK: u32            = 0x80000000;
+    const EXPONENT_MASK: u32        = 0x7F800000;
+    const HIDDEN_BIT_MASK: u32      = 0x00800000;
+    const MANTISSA_MASK: u32        = 0x007FFFFF;
+    const INFINITY_BITS: u32        = 0x7F800000;
+    const NEGATIVE_INFINITY_BITS: u32 = Self::INFINITY_BITS | Self::SIGN_MASK;
+    const MANTISSA_SIZE: i32        = 23;
+    const EXPONENT_BIAS: i32        = 127 + Self::MANTISSA_SIZE;
+    const DENORMAL_EXPONENT: i32    = 1 - Self::EXPONENT_BIAS;
+    const MAX_EXPONENT: i32         = 0xFF - Self::EXPONENT_BIAS;
+    const DEFAULT_SHIFT: i32        = u64::FULL - f32::MANTISSA_SIZE - 1;
+    const CARRY_MASK: u64           = 0x1000000;
+
+    #[inline]
+    fn exponent_limit() -> (i32, i32) {
+        (-10, 10)
+    }
+
+    #[inline]
+    fn mantissa_limit() -> i32 {
+        7
+    }
+
+    #[inline]
+    fn powi(self, n: i32) -> f32 {
+        f32::powi(self, n)
+    }
+
+    #[inline]
+    fn from_bits(u: u32) -> f32 {
+        f32::from_bits(u)
+    }
+
+    #[inline]
+    fn to_bits(self) -> u32 {
+        f32::to_bits(self)
+    }
+}
+
+
+impl Float for f64 {
+    type Unsigned = u64;
+
+    const ZERO: f64 = 0.0;
+
+    const SIGN_MASK: u64            = 0x8000000000000000;
+    const EXPONENT_MASK: u64        = 0x7FF0000000000000;
+    const HIDDEN_BIT_MASK: u64      = 0x0010000000000000;
+    const MANTISSA_MASK: u64        = 0x000FFFFFFFFFFFFF;
+    const INFINITY_BITS: u64        = 0x7FF0000000000000;
+    const NEGATIVE_INFINITY_BITS: u64 = Self::INFINITY_BITS | Self::SIGN_MASK;
+    const MANTISSA_SIZE: i32        = 52;
+    const EXPONENT_BIAS: i32        = 1023 + Self::MANTISSA_SIZE;
+    const DENORMAL_EXPONENT: i32    = 1 - Self::EXPONENT_BIAS;
+    const MAX_EXPONENT: i32         = 0x7FF - Self::EXPONENT_BIAS;
+    const DEFAULT_SHIFT: i32        = u64::FULL - f64::MANTISSA_SIZE - 1;
+    const CARRY_MASK: u64           = 0x20000000000000;
+
+    #[inline]
+    fn exponent_limit() -> (i32, i32) {
+        (-22, 22)
+    }
+
+    #[inline]
+    fn mantissa_limit() -> i32 {
+        15
+    }
+
+    #[inline]
+    fn powi(self, n: i32) -> f64 {
+        f64::powi(self, n)
+    }
+
+    #[inline]
+    fn from_bits(u: u64) -> f64 {
+        f64::from_bits(u)
+    }
+
+    #[inline]
+    fn to_bits(self) -> u64 {
+        f64::to_bits(self)
+    }
+}
