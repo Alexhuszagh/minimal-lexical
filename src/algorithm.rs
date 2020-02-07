@@ -136,7 +136,7 @@ fn moderate_path<F>(mantissa: u64, exponent: i32) -> F
 /// The exponent is not the parsed exponent, for example:
 ///     "2.543" would have a mantissa of `2543` and an exponent of `-3`,
 ///     signifying it should be 2543 * 10^-3.
-pub fn parse_float<F>(mantissa: u64, exponent: i32, truncated: bool) -> F
+pub fn create_float<F>(mantissa: u64, exponent: i32, truncated: bool) -> F
     where F: Float
 {
     // Process the state to a float.
@@ -229,7 +229,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_double_test() {
+    fn moderate_path_test() {
         assert_eq!(123456789.0, moderate_path::<f64>(1234567890, -1));
         assert_eq!(123456789.1, moderate_path::<f64>(1234567891, -1));
         assert_eq!(123456789.12, moderate_path::<f64>(12345678912, -2));

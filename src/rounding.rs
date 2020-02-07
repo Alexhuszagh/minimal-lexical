@@ -55,7 +55,8 @@ fn internal_n_mask(bit: u64, n: u64) -> u64 {
 // Shift right N-bytes and round to the nearest.
 //
 // Return if we are above halfway and if we are halfway.
-pub(crate) fn round_nearest(fp: &mut ExtendedFloat, shift: i32)
+#[inline]
+fn round_nearest(fp: &mut ExtendedFloat, shift: i32)
     -> (bool, bool)
 {
     // Extract the truncated bits using mask.
@@ -78,7 +79,8 @@ pub(crate) fn round_nearest(fp: &mut ExtendedFloat, shift: i32)
 }
 
 // Tie rounded floating point to event.
-pub(crate) fn tie_even(fp: &mut ExtendedFloat, is_above: bool, is_halfway: bool)
+#[inline]
+fn tie_even(fp: &mut ExtendedFloat, is_above: bool, is_halfway: bool)
 {
     // Extract the last bit after shifting (and determine if it is odd).
     let is_odd = fp.mant & 1 == 1;
@@ -96,8 +98,8 @@ pub(crate) fn tie_even(fp: &mut ExtendedFloat, is_above: bool, is_halfway: bool)
 // Floating-point arithmetic uses round to nearest, ties to even,
 // which rounds to the nearest value, if the value is halfway in between,
 // round to an even value.
-pub(crate) fn round_nearest_tie_even(fp: &mut ExtendedFloat, shift: i32)
-{
+#[inline]
+fn round_nearest_tie_even(fp: &mut ExtendedFloat, shift: i32) {
     let (is_above, is_halfway) = round_nearest(fp, shift);
     tie_even(fp, is_above, is_halfway);
 }
@@ -109,7 +111,8 @@ pub(crate) fn round_nearest_tie_even(fp: &mut ExtendedFloat, shift: i32)
 // Floating-point arithmetic uses round to nearest, ties to even,
 // which rounds to the nearest value, if the value is halfway in between,
 // round to an even value.
-pub(crate) fn round_to_float<F>(fp: &mut ExtendedFloat)
+#[inline]
+fn round_to_float<F>(fp: &mut ExtendedFloat)
     where F: Float
 {
     // Calculate the difference to allow a single calculation
@@ -146,6 +149,7 @@ pub(crate) fn round_to_float<F>(fp: &mut ExtendedFloat)
 // Avoid overflow for large values, shift left as needed.
 //
 // Shift until a 1-bit is in the hidden bit, if the mantissa is not 0.
+#[inline]
 fn avoid_overflow<F>(fp: &mut ExtendedFloat)
     where F: Float
 {
@@ -173,6 +177,7 @@ fn avoid_overflow<F>(fp: &mut ExtendedFloat)
 // ROUND TO NATIVE
 
 // Round an extended-precision float to a native float representation.
+#[inline]
 pub(crate) fn round_to_native<F>(fp: &mut ExtendedFloat)
     where F: Float
 {

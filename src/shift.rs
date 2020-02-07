@@ -4,6 +4,7 @@ use crate::lib::mem;
 use super::float::ExtendedFloat;
 
 // Shift extended-precision float right `shift` bytes.
+#[inline]
 pub(crate) fn shr(fp: &mut ExtendedFloat, shift: i32)
 {
     let bits: u64 = mem::size_of::<u64>() as u64 * 8;
@@ -17,6 +18,7 @@ pub(crate) fn shr(fp: &mut ExtendedFloat, shift: i32)
 //
 // Accepts when the shift is the same as the type size, and
 // sets the value to 0.
+#[inline]
 pub(crate) fn overflowing_shr(fp: &mut ExtendedFloat, shift: i32)
 {
     let bits: u64 = mem::size_of::<u64>() as u64 * 8;
@@ -30,6 +32,7 @@ pub(crate) fn overflowing_shr(fp: &mut ExtendedFloat, shift: i32)
 }
 
 // Shift extended-precision float left `shift` bytes.
+#[inline]
 pub(crate) fn shl(fp: &mut ExtendedFloat, shift: i32)
 {
     let bits: u64 = mem::size_of::<u64>() as u64 * 8;

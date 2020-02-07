@@ -11,3 +11,9 @@ repository = "https://github.com/Alexhuszagh/minimal-lexical"
 [features]
 default = ["std"]
 std = []
+examples = []
+
+[[bin]]
+name = "simple-example"
+path = "examples/simple.rs"
+required-features = ["examples"]

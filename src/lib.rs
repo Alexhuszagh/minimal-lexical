@@ -7,15 +7,15 @@ pub(crate) use std::*;
 pub(crate) use core::*;
 }
 
+mod algorithm;
 mod cached;
 mod cached_float80;
 mod float;
 mod num;
-mod parse;
 mod rounding;
 mod shift;
 
 // API.
+pub use self::algorithm::create_float;
 pub use self::num::Float;
-pub use self::parse::parse_float;
 

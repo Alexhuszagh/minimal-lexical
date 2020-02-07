@@ -203,7 +203,10 @@ impl Mantissa for u64 {
 }
 
 /// Get exact exponent limit for radix.
-pub trait Float: Number {
+pub trait Float:
+    Number +
+    ops::Neg<Output=Self>
+{
     /// Unsigned type of the same size.
     type Unsigned: Integer;
 
