@@ -24,6 +24,7 @@ fn parse_mantissa<'a, F, Iter>(mut iter: Iter) -> Bigint
     // Main loop
     let small_powers = POW10_LIMB;
     let step = small_powers.len() - 2;
+    let max_digits = F::MAX_DIGITS - 1;
     let mut counter = 0;
     let mut value: Limb = 0;
     let mut i: usize = 0;
@@ -44,7 +45,7 @@ fn parse_mantissa<'a, F, Iter>(mut iter: Iter) -> Bigint
 
         i += 1;
         counter += 1;
-        if i == F::MAX_DIGITS {
+        if i == max_digits {
             break;
         }
     }
@@ -210,7 +211,7 @@ pub(crate) fn bhcomp<'a, F, Iter1, Iter2>(
         _ => 0
     };
     let sci_exp = scientific_exponent(exponent, integer_digits, digits_start);
-    let count = integer_digits + fraction_digits - digits_start;
+    let count = F::MAX_DIGITS.min(integer_digits + fraction_digits - digits_start);
     let scaled_exponent = sci_exp + 1 - count.as_i32();
 
     // We have a finite conversions number of digits for base10.

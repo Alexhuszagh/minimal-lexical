@@ -106,6 +106,21 @@ fn consume_digits<'a>(digits: &'a [u8])
     split_at_index(digits, index)
 }
 
+// Trim leading 0s.
+#[inline]
+fn ltrim_zero<'a>(bytes: &'a [u8]) -> &'a [u8] {
+    let count = bytes.iter().take_while(|&&si| si == b'0').count();
+    &bytes[count..]
+}
+
+// Trim trailing 0s.
+#[inline]
+fn rtrim_zero<'a>(bytes: &'a [u8]) -> &'a [u8] {
+    let count = bytes.iter().rev().take_while(|&&si| si == b'0').count();
+    let index = bytes.len() - count;
+    &bytes[..index]
+}
+
 // PARSERS
 // -------
 
@@ -148,6 +163,10 @@ fn parse_float<'a, F>(bytes: &'a [u8])
     // Parse the sign.
     let (is_positive, bytes) = parse_sign(bytes);
 
+    // Note: this does not handle special float values.
+    // You will have to handle NaN, Inf, and Infinity
+    // on your own.
+
     // Extract and parse the float components:
     //  1. Integer
     //  2. Fraction
@@ -174,6 +193,13 @@ fn parse_float<'a, F>(bytes: &'a [u8])
     //  3). Some floats do not allow a '+' sign before the significant digits.
     //  4). Many floats require exponent digits after the exponent symbol.
     //  5). Some floats do not allow a '+' sign before the exponent.
+
+    // We now need to trim leading and trailing 0s from the integer
+    // and fraction, respectively. This is required to make the
+    // fast and moderate paths more efficient, and for the slow
+    // path.
+    let integer_slc = ltrim_zero(integer_slc);
+    let fraction_slc = rtrim_zero(fraction_slc);
 
     // Create the float and return our data.
     let mut float: F = minimal_lexical::parse_float(integer_slc.iter(), fraction_slc.iter(), exponent);

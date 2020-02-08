@@ -76,6 +76,21 @@ fn consume_digits<'a>(digits: &'a [u8])
     split_at_index(digits, index)
 }
 
+// Trim leading 0s.
+#[inline]
+fn ltrim_zero<'a>(bytes: &'a [u8]) -> &'a [u8] {
+    let count = bytes.iter().take_while(|&&si| si == b'0').count();
+    &bytes[count..]
+}
+
+// Trim trailing 0s.
+#[inline]
+fn rtrim_zero<'a>(bytes: &'a [u8]) -> &'a [u8] {
+    let count = bytes.iter().rev().take_while(|&&si| si == b'0').count();
+    let index = bytes.len() - count;
+    &bytes[..index]
+}
+
 // PARSERS
 // -------
 
@@ -119,9 +134,6 @@ fn parse_float<'a, F>(bytes: &'a [u8])
     let (is_positive, bytes) = parse_sign(bytes);
 
     // Extract and parse the float components:
-    //  1. Integer
-    //  2. Fraction
-    //  3. Exponent
     let (integer_slc, bytes) = consume_digits(bytes);
     let (fraction_slc, bytes) = match bytes.first() {
         Some(&b'.') => consume_digits(&bytes[1..]),
@@ -137,13 +149,9 @@ fn parse_float<'a, F>(bytes: &'a [u8])
         _                         =>  (0, bytes),
     };
 
-    // Note: You may want to check and validate the float data here:
-    //  1). Many floats require integer or fraction digits, if a fraction
-    //      is present.
-    //  2). All floats require either integer or fraction digits.
-    //  3). Some floats do not allow a '+' sign before the significant digits.
-    //  4). Many floats require exponent digits after the exponent symbol.
-    //  5). Some floats do not allow a '+' sign before the exponent.
+    // Trim leading and trailing zeros.
+    let integer_slc = ltrim_zero(integer_slc);
+    let fraction_slc = rtrim_zero(fraction_slc);
 
     // Create the float and return our data.
     let mut float: F = minimal_lexical::parse_float(integer_slc.iter(), fraction_slc.iter(), exponent);
