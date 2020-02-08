@@ -253,31 +253,56 @@ mod tests {
 
     #[test]
     fn moderate_path_test() {
-        //assert_eq!(123456789.0, moderate_path::<f64>(1234567890, -1));
-        //assert_eq!(123456789.1, moderate_path::<f64>(1234567891, -1));
-        //assert_eq!(123456789.12, moderate_path::<f64>(12345678912, -2));
-        //assert_eq!(123456789.123, moderate_path::<f64>(123456789123, -3));
-        //assert_eq!(123456789.1234, moderate_path::<f64>(1234567891234, -4));
-        //assert_eq!(123456789.12345, moderate_path::<f64>(12345678912345, -5));
-        //assert_eq!(123456789.123456, moderate_path::<f64>(123456789123456, -6));
-        //assert_eq!(123456789.1234567, moderate_path::<f64>(1234567891234567, -7));
-        //assert_eq!(123456789.12345679, moderate_path::<f64>(12345678912345679, -8));
-        //assert_eq!(123456789.12345, moderate_path::<f64>(12345678912345, -5));
-        //assert_eq!(0.04628372940652459, moderate_path::<f64>(4628372940652459, -17));
-        //assert_eq!(2.6383446160308229e-256, moderate_path::<f64>(26383446160308229, -272));
-        // TODO(ahuszagh) This is failing.
-        // 2.63834461603082315e-256
-        //assert_eq!(2.638344616030823e-256, moderate_path::<f64>(2638344616030823147, -274));
+        let (f, valid) = moderate_path::<f64>(1234567890, -1, false);
+        assert!(valid, "should be valid");
+        assert_eq!(f.into_float::<f64>(), 123456789.0);
+
+        let (f, valid) = moderate_path::<f64>(1234567891, -1, false);
+        assert!(valid, "should be valid");
+        assert_eq!(f.into_float::<f64>(), 123456789.1);
+
+        let (f, valid) = moderate_path::<f64>(12345678912, -2, false);
+        assert!(valid, "should be valid");
+        assert_eq!(f.into_float::<f64>(), 123456789.12);
+
+        let (f, valid) = moderate_path::<f64>(123456789123, -3, false);
+        assert!(valid, "should be valid");
+        assert_eq!(f.into_float::<f64>(), 123456789.123);
+
+        let (f, valid) = moderate_path::<f64>(1234567891234, -4, false);
+        assert!(valid, "should be valid");
+        assert_eq!(f.into_float::<f64>(), 123456789.1234);
+
+        let (f, valid) = moderate_path::<f64>(12345678912345, -5, false);
+        assert!(valid, "should be valid");
+        assert_eq!(f.into_float::<f64>(), 123456789.12345);
+
+        let (f, valid) = moderate_path::<f64>(123456789123456, -6, false);
+        assert!(valid, "should be valid");
+        assert_eq!(f.into_float::<f64>(), 123456789.123456);
+
+        let (f, valid) = moderate_path::<f64>(1234567891234567, -7, false);
+        assert!(valid, "should be valid");
+        assert_eq!(f.into_float::<f64>(), 123456789.1234567);
+
+        let (f, valid) = moderate_path::<f64>(12345678912345679, -8, false);
+        assert!(valid, "should be valid");
+        assert_eq!(f.into_float::<f64>(), 123456789.12345679);
+
+        let (f, valid) = moderate_path::<f64>(4628372940652459, -17, false);
+        assert!(valid, "should be valid");
+        assert_eq!(f.into_float::<f64>(), 0.04628372940652459);
+
+        let (f, valid) = moderate_path::<f64>(26383446160308229, -272, false);
+        assert!(valid, "should be valid");
+        assert_eq!(f.into_float::<f64>(), 2.6383446160308229e-256);
+
+        let (_, valid) = moderate_path::<f64>(26383446160308230, -272, false);
+        assert!(!valid, "should be invalid");
     }
 
-//    #[test]
-//    fn create_float_test() {
-//        // Test case discovered by dtolnay.
-//        // https://github.com/serde-rs/json/issues/536#issuecomment-583708730
-//        assert_eq!(0.04628372940652459, create_float::<f64>(4628372940652459, -17, false));
-//
-//        // TODO(ahuszagh) Restore these
-//        // 0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000026383446160308229
-//        // 0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002638344616030823
-//    }
+    #[test]
+    fn fallback_path_test() {
+        // TODO(ahuszagh) Implement...
+    }
 }

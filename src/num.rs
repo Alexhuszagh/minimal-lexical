@@ -174,7 +174,8 @@ number_impl! { u8 u16 u32 u64 u128 usize i8 i16 i32 i64 i128 isize f32 f64 }
 pub trait Integer:
     Number +
     ops::BitAnd<Output=Self> +
-    ops::BitAndAssign
+    ops::BitAndAssign +
+    ops::Shr<i32, Output=Self>
 {
     const ZERO: Self;
 }
@@ -324,7 +325,7 @@ pub trait Float:
         }
 
         let bits = self.to_bits();
-        let biased_e: i32 = (bits & Self::EXPONENT_MASK).as_i32() >> Self::MANTISSA_SIZE;
+        let biased_e: i32 = ((bits & Self::EXPONENT_MASK) >> Self::MANTISSA_SIZE).as_i32();
         biased_e - Self::EXPONENT_BIAS
     }
 

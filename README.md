@@ -1,7 +1,7 @@
 minimal_lexical
 ===============
 
-This is a minimal version of [rust-lexical](https://github.com/Alexhuszagh/rust-lexical), meant to allow efficient round-trip float parsing. This does not implement a correct float parser, however, it will be accurate for round-trip values.
+This is a minimal version of [rust-lexical](https://github.com/Alexhuszagh/rust-lexical), meant to allow efficient round-trip float parsing. This implements a complete parser, with 
 
 # Getting Started
 
@@ -9,12 +9,12 @@ This is a minimal version of [rust-lexical](https://github.com/Alexhuszagh/rust-
 extern crate minimal_lexical;
 
 // Let's say we want to parse "1.2345".
-// First, we have an external parser parse all the significant digits
-// into a u64 (`12345`), and then we have the exponent adjusted to
-// the mantissa (`-4`, since the value is `12345e-4`). Finally,
-// we store whether digits were truncated from the mantissa during 
-// parsing (false).
-let float = minimal_lexical::create_float::<f64>(12345, -4, false);
+// First, we need an external parser to extract the integer digits ("1"),
+// the fraction digits ("2345"), and then parse the exponent to a 32-bit
+// integer (0). 
+let integer = b"1";
+let fraction = b"2345";
+let float = minimal_lexical::parse_float::<f64>(integer.iter(), fraction.iter(), 0);
 println!("float={:?}", float);    // 1.235
 ```
 

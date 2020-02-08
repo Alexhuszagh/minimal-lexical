@@ -31,14 +31,6 @@ fn to_digit(c: u8) -> Option<u32> {
     (c as char).to_digit(10)
 }
 
-// Add digit to mantissa.
-#[inline]
-fn add_digit_u64(value: u64, digit: u32) -> Option<u64> {
-    return value
-        .checked_mul(10)?
-        .checked_add(digit as u64)
-}
-
 // Add digit from exponent.
 #[inline]
 fn add_digit_i32(value: i32, digit: u32) -> Option<i32> {
@@ -84,42 +76,8 @@ fn consume_digits<'a>(digits: &'a [u8])
     split_at_index(digits, index)
 }
 
-/// Convert usize into i32 without overflow.
-///
-/// This is needed to ensure when adjusting the exponent relative to
-/// the mantissa we do not overflow for comically-long exponents.
-#[inline]
-fn into_i32(value: usize) -> i32 {
-    if value > i32::max_value() as usize {
-        i32::max_value()
-    } else {
-        value as i32
-    }
-}
-
 // PARSERS
 // -------
-
-/// Parse the significant digits of the float.
-///
-/// * `integer`     - Slice containing the integer digits.
-/// * `fraction`    - Slice containing the fraction digits.
-fn parse_mantissa(integer: &[u8], fraction: &[u8])
-    -> (u64, usize)
-{
-    let mut value: u64 = 0;
-    let mut iter = integer.iter().chain(fraction.iter());
-    // On overflow, validate that all the remaining characters are valid
-    // digits, if not, return the first invalid digit. Otherwise,
-    // calculate the number of truncated digits.
-    while let Some(c) = iter.next() {
-        value = match add_digit_u64(value, to_digit(*c).unwrap()) {
-            Some(v) => v,
-            None    => return (value, 1 + iter.count()),
-        };
-    }
-    (value, 0)
-}
 
 /// Parse the exponent of the float.
 ///
@@ -169,7 +127,6 @@ fn parse_float<'a, F>(bytes: &'a [u8])
         Some(&b'.') => consume_digits(&bytes[1..]),
         _           => (&bytes[..0], bytes),
     };
-    let (mantissa, truncated) = parse_mantissa(integer_slc, fraction_slc);
     let (exponent, bytes) = match bytes.first() {
         Some(&b'e') | Some(&b'E') => {
             // Extract and parse the exponent.
@@ -188,18 +145,8 @@ fn parse_float<'a, F>(bytes: &'a [u8])
     //  4). Many floats require exponent digits after the exponent symbol.
     //  5). Some floats do not allow a '+' sign before the exponent.
 
-    // Calculate the exponent relative to the significant digits.
-    let mantissa_exponent;
-    let fraction_digits = fraction_slc.len();
-    if fraction_digits > truncated {
-        mantissa_exponent = exponent.saturating_sub(into_i32(fraction_digits - truncated));
-    } else {
-        mantissa_exponent = exponent.saturating_add(into_i32(truncated - fraction_digits));
-    }
-
     // Create the float and return our data.
-    let is_truncated = truncated != 0;
-    let mut float: F = minimal_lexical::create_float(mantissa, mantissa_exponent, is_truncated);
+    let mut float: F = minimal_lexical::parse_float(integer_slc.iter(), fraction_slc.iter(), exponent);
     if !is_positive {
         float = -float;
     }

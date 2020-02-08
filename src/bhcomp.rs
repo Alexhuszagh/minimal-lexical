@@ -3,8 +3,6 @@
 //! Compares the actual significant digits of the mantissa to the
 //! theoretical digits from `b+h`, scaled into the proper range.
 
-#![allow(unused)]   // TODO(ahuszagh) Remove
-
 use crate::lib::{cmp, mem};
 use super::bignum::*;
 use super::digit::*;
@@ -13,21 +11,22 @@ use super::float::*;
 use super::math::*;
 use super::num::*;
 use super::rounding::*;
-use super::small_powers::*;
 
 // MANTISSA
 
 /// Parse the full mantissa into a big integer.
 ///
 /// Max digits is the maximum number of digits plus one.
-fn parse_mantissa<'a, Iter>(mut iter: Iter) -> Bigint
-    where Iter: Iterator<Item=&'a u8> + Clone
+fn parse_mantissa<'a, F, Iter>(mut iter: Iter) -> Bigint
+    where F: Float,
+          Iter: Iterator<Item=&'a u8> + Clone
 {
     // Main loop
     let small_powers = POW10_LIMB;
     let step = small_powers.len() - 2;
     let mut counter = 0;
     let mut value: Limb = 0;
+    let mut i: usize = 0;
     let mut result = Bigint::default();
 
     // Iteratively process all the data in the mantissa.
@@ -43,7 +42,11 @@ fn parse_mantissa<'a, Iter>(mut iter: Iter) -> Bigint
         value *= 10;
         value += as_limb(to_digit(digit).unwrap());
 
+        i += 1;
         counter += 1;
+        if i == F::MAX_DIGITS {
+            break;
+        }
     }
 
     // We will always have a remainder, as long as we entered the loop
@@ -113,7 +116,7 @@ fn large_atof<'a, F, Iter>(iter: Iter, exponent: i32) -> F
     // Now, we can calculate the mantissa and the exponent from this.
     // The binary exponent is the binary exponent for the mantissa
     // shifted to the hidden bit.
-    let mut bigmant = parse_mantissa(iter);
+    let mut bigmant = parse_mantissa::<F, _>(iter);
     bigmant.imul_pow10(exponent.as_u32());
 
     // Get the exact representation of the float from the big integer.
@@ -132,7 +135,7 @@ fn small_atof<'a, F, Iter>(iter: Iter, exponent: i32, f: F) -> F
           Iter: Iterator<Item=&'a u8> + Clone
 {
     // Get the significant digits and radix exponent for the real digits.
-    let mut real_digits = parse_mantissa(iter);
+    let mut real_digits = parse_mantissa::<F, _>(iter);
     let real_exp = exponent;
     debug_assert!(real_exp < 0);
 
@@ -213,9 +216,7 @@ pub(crate) fn bhcomp<'a, F, Iter1, Iter2>(
     // We have a finite conversions number of digits for base10.
     // We need to then limit the iterator over that number of digits.
     // Skip all leading zeros (can occur if fraction is empty).
-    let iter = integer.chain(fraction)
-        .skip(digits_start)
-        .take(F::MAX_DIGITS);
+    let iter = integer.chain(fraction).skip(digits_start);
 
     if scaled_exponent >= 0 {
         large_atof(iter, scaled_exponent)
@@ -223,5 +224,3 @@ pub(crate) fn bhcomp<'a, F, Iter1, Iter2>(
         small_atof(iter, scaled_exponent, b)
     }
 }
-
-// TODO(ahuszagh) need tests

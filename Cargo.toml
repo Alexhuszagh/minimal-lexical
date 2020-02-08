@@ -1,5 +1,6 @@
 [package]
 authors = ["Alex Huszagh <ahuszagh@gmail.com>"]
+autoexamples = false
 build = "build.rs"
 categories = ["parsing", "no-std"]
 description = "Float parsing conversion routines."
