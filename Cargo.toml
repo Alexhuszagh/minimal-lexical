@@ -53,55 +53,55 @@ required-features = ["rng"]
 
 # COMPREHENSIVE FLOAT TESTS
 
-#[[bin]]
-#name = "few_ones"
-#path = "data/test-parse-random/few_ones.rs"
-#required-features = ["comprehensive_float_test"]
-#
-#[[bin]]
-#name = "huge-pow10"
-#path = "data/test-parse-random/huge-pow10.rs"
-#required-features = ["comprehensive_float_test"]
-#
-#[[bin]]
-#name = "long-fractions"
-#path = "data/test-parse-random/long-fractions.rs"
-#required-features = ["comprehensive_float_test"]
-#
-#[[bin]]
-#name = "many-digits"
-#path = "data/test-parse-random/many-digits.rs"
-#required-features = ["comprehensive_float_test"]
-#
-#[[bin]]
-#name = "rand-f64"
-#path = "data/test-parse-random/rand-f64.rs"
-#required-features = ["comprehensive_float_test"]
-#
-#[[bin]]
-#name = "short-decimals"
-#path = "data/test-parse-random/short-decimals.rs"
-#required-features = ["comprehensive_float_test"]
-#
-#[[bin]]
-#name = "subnorm"
-#path = "data/test-parse-random/subnorm.rs"
-#required-features = ["comprehensive_float_test"]
-#
-#[[bin]]
-#name = "tiny-pow10"
-#path = "data/test-parse-random/tiny-pow10.rs"
-#required-features = ["comprehensive_float_test"]
-#
-#[[bin]]
-#name = "u32-small"
-#path = "data/test-parse-random/u32-small.rs"
-#required-features = ["comprehensive_float_test"]
-#
-#[[bin]]
-#name = "u64-pow2"
-#path = "data/test-parse-random/u64-pow2.rs"
-#required-features = ["comprehensive_float_test"]
+[[bin]]
+name = "few_ones"
+path = "data/test-parse-random/few_ones.rs"
+required-features = ["comprehensive_float_test"]
+
+[[bin]]
+name = "huge-pow10"
+path = "data/test-parse-random/huge-pow10.rs"
+required-features = ["comprehensive_float_test"]
+
+[[bin]]
+name = "long-fractions"
+path = "data/test-parse-random/long-fractions.rs"
+required-features = ["comprehensive_float_test"]
+
+[[bin]]
+name = "many-digits"
+path = "data/test-parse-random/many-digits.rs"
+required-features = ["comprehensive_float_test"]
+
+[[bin]]
+name = "rand-f64"
+path = "data/test-parse-random/rand-f64.rs"
+required-features = ["comprehensive_float_test"]
+
+[[bin]]
+name = "short-decimals"
+path = "data/test-parse-random/short-decimals.rs"
+required-features = ["comprehensive_float_test"]
+
+[[bin]]
+name = "subnorm"
+path = "data/test-parse-random/subnorm.rs"
+required-features = ["comprehensive_float_test"]
+
+[[bin]]
+name = "tiny-pow10"
+path = "data/test-parse-random/tiny-pow10.rs"
+required-features = ["comprehensive_float_test"]
+
+[[bin]]
+name = "u32-small"
+path = "data/test-parse-random/u32-small.rs"
+required-features = ["comprehensive_float_test"]
+
+[[bin]]
+name = "u64-pow2"
+path = "data/test-parse-random/u64-pow2.rs"
+required-features = ["comprehensive_float_test"]
 
 [[bin]]
 name = "test-parse-unittests"
