@@ -2,6 +2,14 @@
 
 use crate::lib::ops;
 
+/// Precalculated values of radix**i for i in range [0, arr.len()-1].
+/// Each value can be **exactly** represented as that type.
+const F32_POW10: [f32; 11] = [1.0, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, 10000000.0, 100000000.0, 1000000000.0, 10000000000.0];
+
+/// Precalculated values of radix**i for i in range [0, arr.len()-1].
+/// Each value can be **exactly** represented as that type.
+const F64_POW10: [f64; 23] = [1.0, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, 10000000.0, 100000000.0, 1000000000.0, 10000000000.0, 100000000000.0, 1000000000000.0, 10000000000000.0, 100000000000000.0, 1000000000000000.0, 10000000000000000.0, 100000000000000000.0, 1000000000000000000.0, 10000000000000000000.0, 100000000000000000000.0, 1000000000000000000000.0, 10000000000000000000000.0];
+
 /// Type that can be converted to primitive with `as`.
 pub trait AsPrimitive:
     Sized +
@@ -252,7 +260,7 @@ pub trait Float:
     fn mantissa_limit() -> i32;
 
     // Re-exported methods from std.
-    fn powi(self, n: i32) -> Self;
+    fn pow10(self, n: i32) -> Self;
     fn from_bits(u: Self::Unsigned) -> Self;
     fn to_bits(self) -> Self::Unsigned;
 
@@ -316,8 +324,18 @@ impl Float for f32 {
     }
 
     #[inline]
-    fn powi(self, n: i32) -> f32 {
-        f32::powi(self, n)
+    fn pow10(self, n: i32) -> f32 {
+        // Check the exponent is within bounds in debug builds.
+        debug_assert!({
+            let (min, max) = Self::exponent_limit();
+            n >= min && n <= max
+        });
+
+        if n > 0 {
+            self * F32_POW10[n as usize]
+        } else {
+            self / F32_POW10[(-n) as usize]
+        }
     }
 
     #[inline]
@@ -361,8 +379,18 @@ impl Float for f64 {
     }
 
     #[inline]
-    fn powi(self, n: i32) -> f64 {
-        f64::powi(self, n)
+    fn pow10(self, n: i32) -> f64 {
+        // Check the exponent is within bounds in debug builds.
+        debug_assert!({
+            let (min, max) = Self::exponent_limit();
+            n >= min && n <= max
+        });
+
+        if n > 0 {
+            self * F64_POW10[n as usize]
+        } else {
+            self / F64_POW10[(-n) as usize]
+        }
     }
 
     #[inline]
@@ -480,7 +508,7 @@ mod tests {
 
     fn check_float<T: Float>(x: T) {
         // Check functions
-        let _ = x.powi(5);
+        let _ = x.pow10(5);
         let _ = x.to_bits();
         assert!(T::from_bits(x.to_bits()) == x);
 

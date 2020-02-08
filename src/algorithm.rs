@@ -28,11 +28,10 @@ fn fast_path<F>(mantissa: u64, exponent: i32)
         Some(float)
     } else if exponent >= min_exp && exponent <= max_exp {
         // Value can be exactly represented, return the value.
-        // Use powi, since it's correct, and faster on
-        // the fast-path.
+        // Do not use powi, since powi can incrementally introduce
+        // error.
         let float = F::as_cast(mantissa);
-        let base = F::as_cast(10i32);
-        Some(float.mul(base.powi(exponent)))
+        Some(float.pow10(exponent))
     } else if exponent >= 0 && exponent <= max_exp + shift_exp {
         // Check to see if we have a disguised fast-path, where the
         // number of digits in the mantissa is very small, but and
@@ -52,8 +51,7 @@ fn fast_path<F>(mantissa: u64, exponent: i32)
             // Use powi, since it's correct, and faster on
             // the fast-path.
             let float = F::as_cast(value);
-            let base = F::as_cast(10i32);
-            Some(float.mul(base.powi(max_exp)))
+            Some(float.pow10(max_exp))
         }
     } else {
         // Cannot be exactly represented, exponent too small or too big,
@@ -148,6 +146,7 @@ pub fn create_float<F>(mantissa: u64, exponent: i32, truncated: bool) -> F
     } else if !truncated {
         // Try the fast path, no mantissa truncation.
         if let Some(float) = fast_path::<F>(mantissa, exponent) {
+            println!("fast_path");
             float
         } else {
             moderate_path(mantissa, exponent)
@@ -226,6 +225,8 @@ mod tests {
 
         let f = fast_path::<f64>(mantissa, max_exp+1);
         assert!(f.is_none(), "exponent above max_exp");
+
+        assert_eq!(Some(0.04628372940652459), fast_path::<f64>(4628372940652459, -17));
     }
 
     #[test]
@@ -240,5 +241,13 @@ mod tests {
         assert_eq!(123456789.1234567, moderate_path::<f64>(1234567891234567, -7));
         assert_eq!(123456789.12345679, moderate_path::<f64>(12345678912345679, -8));
         assert_eq!(123456789.12345, moderate_path::<f64>(12345678912345, -5));
+        assert_eq!(0.04628372940652459, moderate_path::<f64>(4628372940652459, -17));
+    }
+
+    #[test]
+    fn create_float_test() {
+        // Test case discovered by dtolnay.
+        // https://github.com/serde-rs/json/issues/536#issuecomment-583708730
+        assert_eq!(0.04628372940652459, create_float::<f64>(4628372940652459, -17, false));
     }
 }
