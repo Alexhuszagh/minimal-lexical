@@ -10,7 +10,7 @@
 
 mod _common;
 
-use _common::validate;
+use self::_common::validate;
 
 fn main() {
     // Skip e = 0 because small-u32 already does those.

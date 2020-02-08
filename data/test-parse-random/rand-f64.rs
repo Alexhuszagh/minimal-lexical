@@ -12,7 +12,7 @@ extern crate rand;
 
 mod _common;
 
-use _common::{validate, SEED};
+use self::_common::{validate, SEED};
 use rand::{IsaacRng, Rng, SeedableRng};
 use std::mem::transmute;
 

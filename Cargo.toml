@@ -5,11 +5,12 @@ build = "build.rs"
 categories = ["parsing", "no-std"]
 description = "Float parsing conversion routines."
 edition = "2018"
-name = "minimal_lexical"
-version = "0.0.1"
+name = "minimal-lexical"
+version = "0.1.0"
 readme = "README.md"
 repository = "https://github.com/Alexhuszagh/minimal-lexical"
 exclude = [
+    "ci/*",
     "data/*",
     "examples/*",
     "rng-tests/*"
@@ -17,7 +18,7 @@ exclude = [
 
 [dependencies]
 cfg-if = "0.1"
-arrayvec = { version = "0.5", features = ["array-sizes-33-128"] }
+arrayvec = { version = "0.4", features = ["array-sizes-33-128"] }
 # The following are only required for comprehensive float unittests
 # and rng-tests.
 # IE, internal testing only:

@@ -10,7 +10,7 @@
 
 mod _common;
 
-use _common::validate;
+use self::_common::validate;
 
 fn main() {
     for e in 300..310 {

@@ -15,7 +15,7 @@ mod _common;
 use std::char;
 use rand::{IsaacRng, Rng, SeedableRng};
 use rand::distributions::{Range, Sample};
-use _common::{validate, SEED};
+use self::_common::{validate, SEED};
 
 fn main() {
     let mut rnd = IsaacRng::from_seed(&SEED);

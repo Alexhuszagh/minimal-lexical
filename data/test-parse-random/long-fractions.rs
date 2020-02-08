@@ -11,7 +11,7 @@
 mod _common;
 
 use std::char;
-use _common::{parse_float, validate};
+use self::_common::{parse_float, validate};
 
 fn main() {
     for n in 0..10 {
