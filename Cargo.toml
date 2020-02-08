@@ -1,5 +1,6 @@
 [package]
 authors = ["Alex Huszagh <ahuszagh@gmail.com>"]
+build = "build.rs"
 categories = ["parsing", "no-std"]
 description = "Float parsing conversion routines."
 edition = "2018"
@@ -7,13 +8,30 @@ name = "minimal_lexical"
 version = "0.0.1"
 readme = "README.md"
 repository = "https://github.com/Alexhuszagh/minimal-lexical"
+exclude = [
+    "examples/*",
+    "rng-tests/*"
+]
+
+[dependencies]
+cfg-if = "0.1"
+arrayvec = { version = "0.5", features = ["array-sizes-33-128"] }
+rand_core = { optional = true, version = "0.3" }
+rand_xorshift = { optional = true, version = "0.1" }
+ryu = { optional = true, version = "1.0" }
 
 [features]
 default = ["std"]
 std = []
+rng = ["rand_core", "rand_xorshift", "ryu"]
 examples = []
 
 [[bin]]
 name = "simple-example"
 path = "examples/simple.rs"
 required-features = ["examples"]
+
+[[bin]]
+name = "smoke-test"
+path = "rng-tests/smoke.rs"
+required-features = ["rng"]

@@ -60,6 +60,7 @@ impl ExtendedFloat {
     /// Multiply in-place, as if by `a*b`.
     ///
     /// The result is not normalized.
+    #[inline]
     pub(crate) fn imul(&mut self, b: &ExtendedFloat) {
         *self = self.mul(b);
     }
@@ -72,6 +73,7 @@ impl ExtendedFloat {
     /// itself is 0.
     ///
     /// Get the number of bytes shifted.
+    #[inline]
     pub(crate) fn normalize(&mut self) -> u32 {
         // Note:
         // Using the cltz intrinsic via leading_zeros is way faster (~10x)
@@ -94,18 +96,49 @@ impl ExtendedFloat {
     // ROUND
 
     /// Lossy round float-point number to native mantissa boundaries.
-    pub(crate) fn round_to_native<F>(&mut self)
-        where F: Float
+    #[inline]
+    pub(crate) fn round_to_native<F, Algorithm>(&mut self, algorithm: Algorithm)
+        where F: Float,
+              Algorithm: FnOnce(&mut ExtendedFloat, i32)
     {
-        round_to_native::<F>(self)
+        round_to_native::<F, _>(self, algorithm)
+    }
+
+    // FROM
+
+    /// Create extended float from native float.
+    #[inline]
+    pub fn from_float<F: Float>(f: F) -> ExtendedFloat {
+        from_float(f)
     }
 
     // INTO
 
-    /// Convert into lower-precision native float.
+    /// Convert into default-rounded, lower-precision native float.
+    #[inline]
     pub(crate) fn into_float<F: Float>(mut self) -> F {
-        self.round_to_native::<F>();
+        self.round_to_native::<F, _>(round_nearest_tie_even);
         into_float(self)
+    }
+
+    /// Convert into downward-rounded, lower-precision native float.
+    #[inline]
+    pub(crate) fn into_downward_float<F: Float>(mut self) -> F {
+        self.round_to_native::<F, _>(round_downward);
+        into_float(self)
+    }
+}
+
+// FROM FLOAT
+
+// Import ExtendedFloat from native float.
+#[inline]
+pub(crate) fn from_float<F>(f: F) -> ExtendedFloat
+    where F: Float
+{
+    ExtendedFloat {
+        mant: u64::as_cast(f.mantissa()),
+        exp: f.exponent(),
     }
 }
 
@@ -115,6 +148,7 @@ impl ExtendedFloat {
 //
 // The extended-precision float must be in native float representation,
 // with overflow/underflow appropriately handled.
+#[inline]
 pub(crate) fn into_float<F>(fp: ExtendedFloat) -> F
     where F: Float
 {

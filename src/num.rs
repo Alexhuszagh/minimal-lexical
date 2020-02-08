@@ -218,7 +218,33 @@ pub trait Float:
     /// Unsigned type of the same size.
     type Unsigned: Integer;
 
+    /// Literal zero.
     const ZERO: Self;
+    /// Maximum number of digits that can contribute in the mantissa.
+    ///
+    /// We can exactly represent a float in radix `b` from radix 2 if
+    /// `b` is divisible by 2. This function calculates the exact number of
+    /// digits required to exactly represent that float.
+    ///
+    /// According to the "Handbook of Floating Point Arithmetic",
+    /// for IEEE754, with emin being the min exponent, p2 being the
+    /// precision, and b being the radix, the number of digits follows as:
+    ///
+    /// `−emin + p2 + ⌊(emin + 1) log(2, b) − log(1 − 2^(−p2), b)⌋`
+    ///
+    /// For f32, this follows as:
+    ///     emin = -126
+    ///     p2 = 24
+    ///
+    /// For f64, this follows as:
+    ///     emin = -1022
+    ///     p2 = 53
+    ///
+    /// In Python:
+    ///     `-emin + p2 + math.floor((emin+1)*math.log(2, b) - math.log(1-2**(-p2), b))`
+    ///
+    /// This was used to calculate the maximum number of digits for [2, 36].
+    const MAX_DIGITS: usize;
 
     // MASKS
 
@@ -263,11 +289,31 @@ pub trait Float:
     fn pow10(self, n: i32) -> Self;
     fn from_bits(u: Self::Unsigned) -> Self;
     fn to_bits(self) -> Self::Unsigned;
+    fn is_sign_positive(self) -> bool;
+    fn is_sign_negative(self) -> bool;
 
     /// Returns true if the float is a denormal.
     #[inline]
     fn is_denormal(self) -> bool {
         self.to_bits() & Self::EXPONENT_MASK == Self::Unsigned::ZERO
+    }
+
+    /// Returns true if the float is a NaN or Infinite.
+    #[inline]
+    fn is_special(self) -> bool {
+        self.to_bits() & Self::EXPONENT_MASK == Self::EXPONENT_MASK
+    }
+
+    /// Returns true if the float is NaN.
+    #[inline]
+    fn is_nan(self) -> bool {
+        self.is_special() && (self.to_bits() & Self::MANTISSA_MASK) != Self::Unsigned::ZERO
+    }
+
+    /// Returns true if the float is infinite.
+    #[inline]
+    fn is_inf(self) -> bool {
+        self.is_special() && (self.to_bits() & Self::MANTISSA_MASK) == Self::Unsigned::ZERO
     }
 
     /// Get exponent component from the float.
@@ -293,13 +339,31 @@ pub trait Float:
             s
         }
     }
+
+    /// Get next greater float for a positive float.
+    /// Value must be >= 0.0 and < INFINITY.
+    #[inline]
+    fn next_positive(self) -> Self {
+        debug_assert!(self.is_sign_positive() && !self.is_inf());
+        Self::from_bits(self.to_bits() + Self::Unsigned::as_cast(1))
+    }
+
+    /// Round a positive number to even.
+    #[inline]
+    fn round_positive_even(self) -> Self {
+        if self.mantissa() & Self::Unsigned::as_cast(1) == Self::Unsigned::as_cast(1) {
+            self.next_positive()
+        } else {
+            self
+        }
+    }
 }
 
 impl Float for f32 {
     type Unsigned = u32;
 
     const ZERO: f32 = 0.0;
-
+    const MAX_DIGITS: usize = 114;
     const SIGN_MASK: u32            = 0x80000000;
     const EXPONENT_MASK: u32        = 0x7F800000;
     const HIDDEN_BIT_MASK: u32      = 0x00800000;
@@ -347,6 +411,16 @@ impl Float for f32 {
     fn to_bits(self) -> u32 {
         f32::to_bits(self)
     }
+
+    #[inline]
+    fn is_sign_positive(self) -> bool {
+        f32::is_sign_positive(self)
+    }
+
+    #[inline]
+    fn is_sign_negative(self) -> bool {
+        f32::is_sign_negative(self)
+    }
 }
 
 
@@ -354,7 +428,7 @@ impl Float for f64 {
     type Unsigned = u64;
 
     const ZERO: f64 = 0.0;
-
+    const MAX_DIGITS: usize = 769;
     const SIGN_MASK: u64            = 0x8000000000000000;
     const EXPONENT_MASK: u64        = 0x7FF0000000000000;
     const HIDDEN_BIT_MASK: u64      = 0x0010000000000000;
@@ -401,6 +475,16 @@ impl Float for f64 {
     #[inline]
     fn to_bits(self) -> u64 {
         f64::to_bits(self)
+    }
+
+    #[inline]
+    fn is_sign_positive(self) -> bool {
+        f64::is_sign_positive(self)
+    }
+
+    #[inline]
+    fn is_sign_negative(self) -> bool {
+        f64::is_sign_negative(self)
     }
 }
 
