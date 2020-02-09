@@ -28,7 +28,7 @@ build() {
     $CARGO build $CARGO_TARGET $DEFAULT_FEATURES
     $CARGO build $CARGO_TARGET $DEFAULT_FEATURES --release
     # Ensure our testing examples build.
-    if [ -z $DISABLE_COMPREHENSIVE ]; then
+    if [ ! -z $DISABLE_COMPREHENSIVE ]; then
         features=rng,examples
     else
         features=rng,examples,comprehensive_float_test
