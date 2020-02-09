@@ -27,7 +27,7 @@ fi
 build() {
     $CARGO build $CARGO_TARGET $DEFAULT_FEATURES
     $CARGO build $CARGO_TARGET $DEFAULT_FEATURES --release
-    $CARGO build $CARGO_TARGET $DEFAULT_FEATURES --features=$rng,examples,comprehensive_float_test
+    $CARGO build $CARGO_TARGET $DEFAULT_FEATURES --features=$no_alloc,rng,examples,comprehensive_float_test
 }
 
 # Test target.

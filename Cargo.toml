@@ -17,8 +17,8 @@ exclude = [
 ]
 
 [dependencies]
-cfg-if = "0.1"
-arrayvec = { version = "0.4", features = ["array-sizes-33-128"] }
+# Arrayvec is only used if we require stack-allocation.
+arrayvec = { version = "0.4", optional = true, features = ["array-sizes-33-128"] }
 # The following are only required for comprehensive float unittests
 # and rng-tests.
 # IE, internal testing only:
@@ -33,6 +33,7 @@ toml = { version = "0.5", optional = true }
 [features]
 default = ["std"]
 std = []
+no_alloc = ["arrayvec"]
 # Subsequent are testing-only.
 rng = ["rand_core", "rand_xorshift", "ryu"]
 examples = []

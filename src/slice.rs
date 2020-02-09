@@ -125,6 +125,7 @@ impl<T> Slice<T> for [T] {
     }
 }
 
+#[cfg(no_alloc)]
 impl<A: arrayvec::Array> Slice<A::Item> for arrayvec::ArrayVec<A> {
     #[inline]
     fn as_slice(&self) -> &[A::Item] {
@@ -133,6 +134,19 @@ impl<A: arrayvec::Array> Slice<A::Item> for arrayvec::ArrayVec<A> {
 
     #[inline]
     fn rindex<I: RSliceIndex<[A::Item]>>(&self, index: I) -> &I::Output {
+        index.rindex(self.as_slice())
+    }
+}
+
+#[cfg(not(no_alloc))]
+impl<T> Slice<T> for crate::lib::Vec<T> {
+    #[inline]
+    fn as_slice(&self) -> &[T] {
+        self
+    }
+
+    #[inline]
+    fn rindex<I: RSliceIndex<[T]>>(&self, index: I) -> &I::Output {
         index.rindex(self.as_slice())
     }
 }

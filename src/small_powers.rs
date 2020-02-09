@@ -1,10 +1,10 @@
 //! Pre-computed small powers.
 
 // 32 BIT
-#[cfg(not(limb_width_64))]
+#[cfg(limb_width_32)]
 pub(crate) const POW5_32: [u32; 14] = [1, 5, 25, 125, 625, 3125, 15625, 78125, 390625, 1953125, 9765625, 48828125, 244140625, 1220703125];
 
-#[cfg(not(limb_width_64))]
+#[cfg(limb_width_32)]
 pub(crate) const POW10_32: [u32; 10] = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000];
 
 // 64 BIT

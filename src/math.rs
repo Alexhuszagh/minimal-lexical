@@ -33,26 +33,43 @@ use crate::small_powers::*;
 //  Platforms where native 128-bit multiplication is not supported,
 //  requiring software emulation.
 //      sparc64 (`UMUL` only supported double-word arguments).
-cfg_if! {
-if #[cfg(limb_width_64)] {
-    pub type Limb = u64;
-    pub const POW5_LIMB: &[Limb] = &POW5_64;
-    pub const POW10_LIMB: &[Limb] = &POW10_64;
-    type Wide = u128;
-} else {
-    pub type Limb = u32;
-    type Wide = u64;
-    pub const POW5_LIMB: &[Limb] = &POW5_32;
-    pub const POW10_LIMB: &[Limb] = &POW10_32;
-}}   // cfg_if
+
+// 32-BIT LIMB
+#[cfg(limb_width_32)]
+pub type Limb = u32;
+
+#[cfg(limb_width_32)]
+pub const POW5_LIMB: &[Limb] = &POW5_32;
+
+#[cfg(limb_width_32)]
+pub const POW10_LIMB: &[Limb] = &POW10_32;
+
+#[cfg(limb_width_32)]
+type Wide = u64;
+
+// 64-BIT LIMB
+#[cfg(limb_width_64)]
+pub type Limb = u64;
+
+#[cfg(limb_width_64)]
+pub const POW5_LIMB: &[Limb] = &POW5_64;
+
+#[cfg(limb_width_64)]
+pub const POW10_LIMB: &[Limb] = &POW10_64;
+
+#[cfg(limb_width_64)]
+type Wide = u128;
 
 // Maximum denominator is 767 mantissa digits + 324 exponent,
 // or 1091 digits, or approximately 3600 bits (round up to 4k).
-#[cfg(limb_width_32)]
+#[cfg(all(no_alloc, limb_width_32))]
 pub(crate) type LimbVecType = arrayvec::ArrayVec<[Limb; 128]>;
 
-#[cfg(limb_width_64)]
+#[cfg(all(no_alloc, limb_width_64))]
 pub(crate) type LimbVecType = arrayvec::ArrayVec<[Limb; 64]>;
+
+#[cfg(not(no_alloc))]
+pub(crate) type LimbVecType = crate::lib::Vec<Limb>;
 
 /// Cast to limb type.
 #[inline(always)]
@@ -71,7 +88,7 @@ fn as_wide<T: Integer>(t: T) -> Wide {
 
 /// Split u64 into limbs, in little-endian order.
 #[inline]
-#[cfg(not(limb_width_64))]
+#[cfg(limb_width_32)]
 fn split_u64(x: u64) -> [Limb; 2] {
     [as_limb(x), as_limb(x >> 32)]
 }
@@ -268,6 +285,7 @@ fn insert_many<Iter>(vec: &mut LimbVecType, index: usize, iterable: Iter)
             let mut cur = ptr.add(num_added);
             if num_added >= lower_size_bound {
                 // Iterator provided more elements than the hint.  Move trailing items again.
+                reserve(vec, 1);
                 ptr = vec.as_mut_ptr().add(index);
                 cur = ptr.add(num_added);
                 ptr::copy(cur, cur.add(1), old_len - index);
@@ -286,6 +304,7 @@ fn insert_many<Iter>(vec: &mut LimbVecType, index: usize, iterable: Iter)
 
 /// Resize arrayvec to size.
 #[inline]
+#[cfg(no_alloc)]
 fn resize(vec: &mut LimbVecType, len: usize, value: Limb) {
     assert!(len <= vec.capacity());
     let old_len = vec.len();
@@ -294,6 +313,41 @@ fn resize(vec: &mut LimbVecType, len: usize, value: Limb) {
     } else {
         vec.truncate(len);
     }
+}
+
+/// Resize vec to size.
+#[inline]
+#[cfg(not(no_alloc))]
+fn resize(vec: &mut LimbVecType, len: usize, value: Limb) {
+    vec.resize(len, value)
+}
+
+/// Reserve arrayvec capacity.
+#[inline]
+#[cfg(no_alloc)]
+pub(crate) fn reserve(vec: &mut LimbVecType, capacity: usize) {
+    assert!(vec.len() + capacity <= vec.capacity());
+}
+
+/// Reserve vec capacity.
+#[inline]
+#[cfg(not(no_alloc))]
+pub(crate) fn reserve(vec: &mut LimbVecType, capacity: usize) {
+    vec.reserve(capacity)
+}
+
+/// Reserve exact arrayvec capacity.
+#[inline]
+#[cfg(no_alloc)]
+fn reserve_exact(vec: &mut LimbVecType, capacity: usize) {
+    assert!(vec.len() + capacity <= vec.capacity());
+}
+
+/// Reserve exact vec capacity.
+#[inline]
+#[cfg(not(no_alloc))]
+fn reserve_exact(vec: &mut LimbVecType, capacity: usize) {
+    vec.reserve_exact(capacity)
 }
 
 // SCALAR
@@ -827,6 +881,8 @@ fn karatsuba_mul(x: &[Limb], y: &[Limb]) -> LimbVecType {
         //  z1 must be shifted m digits (2^(32m)) over.
         //  z2 must be shifted 2*m digits (2^(64m)) over.
         let mut result = LimbVecType::default();
+        let len = z0.len().max(m + z1.len()).max(2*m + z2.len());
+        reserve_exact(&mut result, len);
         result.extend(z0.iter().cloned());
         iadd_impl(&mut result, &z1, m);
         iadd_impl(&mut result, &z2, 2*m);
@@ -1015,7 +1071,7 @@ mod tests {
         }
     }
 
-    #[cfg(not(limb_width_64))]
+    #[cfg(limb_width_32)]
     pub(crate) fn from_u32(x: &[u32]) -> LimbVecType {
         x.iter().cloned().collect()
     }
