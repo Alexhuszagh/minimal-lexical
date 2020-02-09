@@ -52,6 +52,11 @@ name = "smoke-test"
 path = "rng-tests/smoke.rs"
 required-features = ["rng"]
 
+[[bin]]
+name = "f32-test"
+path = "rng-tests/f32.rs"
+required-features = ["rng"]
+
 # COMPREHENSIVE FLOAT TESTS
 
 [[bin]]
