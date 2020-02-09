@@ -6,13 +6,6 @@ language: rust
 services: docker
 sudo: required
 
-addons:
-  apt:
-    update: true
-    sources:
-    - deadsnakes
-    - ubuntu-toolchain-r-test
-
 matrix:
   include:
     - rust: stable
