@@ -5,7 +5,7 @@ minimal-lexical
 [![Latest Version](https://img.shields.io/crates/v/minimal-lexical.svg)](https://crates.io/crates/minimal-lexical)
 [![Rustc Version 1.31+](https://img.shields.io/badge/rustc-1.31+-lightgray.svg)](https://blog.rust-lang.org/2018/12/06/Rust-1.31-and-rust-2018.html)
 
-This is a minimal version of [rust-lexical](https://github.com/Alexhuszagh/rust-lexical), meant to allow efficient round-trip float parsing. This implements a complete parser, however
+This is a minimal version of [rust-lexical](https://github.com/Alexhuszagh/rust-lexical), meant to allow efficient round-trip float parsing. This implements a complete parser, however.
 
 # Getting Started
 

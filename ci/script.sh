@@ -2,12 +2,18 @@
 
 set -ex
 
-# Detect our build command if we are on travis or not (so we can test locally).
-if [ -z $CI ] || [ ! -z $DISABLE_CROSS ]; then
-    # Not on CI or explicitly disabled cross, use cargo
+# Detect our build command. If we enabled cross, default to
+# that. Otherwise, only use cross if we are on CI and did
+# not explicitly disable it.
+if [ ! -z $ENABLE_CROSS ]; then
+    # Specifically enabled cross.
+    CARGO=cross
+    CARGO_TARGET="--target $TARGET"
+elif [ -z $CI ] || [ ! -z $DISABLE_CROSS ]; then
+    # Explicitly disabled cross, use cargo.
     CARGO=cargo
 else
-    # On CI, use cross.
+    # On CI, did not disable cross, use cross.
     CARGO=cross
     CARGO_TARGET="--target $TARGET"
 fi
@@ -27,7 +33,9 @@ fi
 build() {
     $CARGO build $CARGO_TARGET $DEFAULT_FEATURES
     $CARGO build $CARGO_TARGET $DEFAULT_FEATURES --release
-    $CARGO build $CARGO_TARGET $DEFAULT_FEATURES --features=$no_alloc,rng,examples,comprehensive_float_test
+    if [ -z $DISABLE_BINARIES ]; then
+        $CARGO build $CARGO_TARGET $DEFAULT_FEATURES --features=$no_alloc,rng,examples,comprehensive_float_test
+    fi
 }
 
 # Test target.

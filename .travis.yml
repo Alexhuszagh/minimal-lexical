@@ -92,8 +92,8 @@ matrix:
 
   allow_failures:
     - rust: nightly
-    - env: TARGET=i686-unknown-freebsd DISABLE_TESTS=1
-    - env: TARGET=x86_64-unknown-freebsd DISABLE_TESTS=1
+    - env: TARGET=i686-unknown-freebsd DISABLE_TESTS=1 DISABLE_BINARIES=1
+    - env: TARGET=x86_64-unknown-freebsd DISABLE_TESTS=1 DISABLE_BINARIES=1
 
 before_install:
   - set -e

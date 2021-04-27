@@ -5,6 +5,7 @@
 //! and `0` is the least significant limb.
 
 use crate::lib::{cmp, iter, mem, ptr, ops};
+use crate::lib::ops::RangeBounds;
 use crate::num::*;
 use crate::large_powers;
 use crate::slice::*;
@@ -326,10 +327,27 @@ pub fn insert_many<Iter>(vec: &mut LimbVecType, index: usize, iterable: Iter)
         len: usize,
     }
 
+    impl<T> DropOnPanic<T> {
+        // Contains methods for Rustc versions < 1.35.0.
+        // Remove when support is dropped for < 1.35.0.
+        #[inline]
+        fn contains(&self, item: &usize) -> bool {
+            (match self.skip.start_bound() {
+                ops::Bound::Included(ref start) => *start <= item,
+                ops::Bound::Excluded(ref start) => *start < item,
+                ops::Bound::Unbounded => true,
+            }) && (match self.skip.end_bound() {
+                ops::Bound::Included(ref end) => item <= *end,
+                ops::Bound::Excluded(ref end) => item < *end,
+                ops::Bound::Unbounded => true,
+            })
+        }
+    }
+
     impl<T> Drop for DropOnPanic<T> {
         fn drop(&mut self) {
             for i in 0..self.len {
-                if !self.skip.contains(&i) {
+                if !self.contains(&i) {
                     unsafe {
                         ptr::drop_in_place(self.start.add(i));
                     }
