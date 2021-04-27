@@ -2,12 +2,22 @@ minimal-lexical
 ===============
 
 [![Build Status](https://api.travis-ci.org/Alexhuszagh/minimal-lexical.svg?branch=master)](https://travis-ci.org/Alexhuszagh/minimal-lexical)
-[![Latest Version](https://img.shields.io/crates/v/minimal-lexical.svg)](https://crates.io/crates/minimal-lexical)
 [![Rustc Version 1.31+](https://img.shields.io/badge/rustc-1.31+-lightgray.svg)](https://blog.rust-lang.org/2018/12/06/Rust-1.31-and-rust-2018.html)
 
-This is a minimal version of [rust-lexical](https://github.com/Alexhuszagh/rust-lexical), meant to allow efficient round-trip float parsing. This implements a complete parser, however.
+This is a minimal version of [rust-lexical](https://github.com/Alexhuszagh/rust-lexical), meant to allow efficient round-trip float parsing. minimal-lexical implements a correct, fast float parser.
+
+Due to the small, stable nature of minimal-lexical, it is also well-adapted to private forks. If you do privately fork minimal-lexical, I recommend you contact me via [email](mailto:ahuszagh@gmail.com) or [Twitter](https://twitter.com/KardOnIce), so I can notify you of feature updates, bug fixes, or security vulnerabilities, as well as help you implement custom feature requests. I will not use your information for any other purpose, including, but not limited to disclosing your project or organization's use of minimal-lexical.
 
 # Getting Started
+
+First, add the following to your `Cargo.toml`.
+
+```toml
+[dependencies]
+minimal-lexical = "0.1"
+```
+
+Next, to parse a simple float, use the following:
 
 ```rust
 extern crate minimal_lexical;
@@ -23,7 +33,7 @@ extern crate minimal_lexical;
 //  be handled by minimal-lexical, since we accept iterators
 let integer = b"1";
 let fraction = b"2345";
-let float = minimal_lexical::parse_float::<f64>(integer.iter(), fraction.iter(), 0);
+let float: f64 = minimal_lexical::parse_float(integer.iter(), fraction.iter(), 0);
 println!("float={:?}", float);    // 1.235
 ```
 
@@ -36,7 +46,11 @@ For example, the following float is valid in Rust strings, but is invalid in JSO
 1.e7
 ```
 
-Therefore, to use the library, you need functionality that extracts the significant digits to pass to `create_float`. Please see [simple-example](examples/simple.rs) for a simple, annotated example on how to use minimal-lexical as a parser.
+Therefore, to use the library, you need functionality that extracts the significant digits to pass to `create_float`. Please see [simple-example](https://github.com/Alexhuszagh/minimal-lexical/blob/master/examples/simple.rs) for a simple, annotated example on how to use minimal-lexical as a parser.
+
+# Algorithms
+
+For an in-depth explanation on the algorithms minimal-lexical uses, please see [lexical-core#string-to-float](https://github.com/Alexhuszagh/rust-lexical/tree/master/lexical-core#string-to-float).
 
 # Minimum Version Support
 

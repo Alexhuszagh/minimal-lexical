@@ -43,8 +43,8 @@ fn parse_mantissa<'a, Iter1, Iter2>(mut integer: Iter1, mut fraction: Iter2)
 /// * `exponent`    - Parsed, 32-bit exponent.
 ///
 /// # Preconditions
-/// 1). The integer should not have leading zeros.
-/// 2). The fraction should not have trailing zeros.
+/// 1. The integer should not have leading zeros.
+/// 2. The fraction should not have trailing zeros.
 ///
 /// We cannot efficiently remove trailing zeros while only accepting a
 /// forward iterator.
