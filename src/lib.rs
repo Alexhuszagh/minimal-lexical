@@ -5,7 +5,7 @@
 // Require intrinsics in a no_std context.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(all(not(no_alloc), not(feature = "std")))]
+#[cfg(all(not(feature = "no_alloc"), not(feature = "std")))]
 extern crate alloc;
 
 /// Facade around the core features for name mangling.
@@ -16,10 +16,10 @@ pub(crate) use std::*;
 #[cfg(not(feature = "std"))]
 pub(crate) use core::*;
 
-#[cfg(all(not(no_alloc), feature = "std"))]
+#[cfg(all(not(feature = "no_alloc"), feature = "std"))]
 pub(crate) use std::vec::Vec;
 
-#[cfg(all(not(no_alloc), not(feature = "std")))]
+#[cfg(all(not(feature = "no_alloc"), not(feature = "std")))]
 pub(crate) use ::alloc::vec::Vec;
 }
 

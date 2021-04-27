@@ -125,7 +125,7 @@ impl<T> Slice<T> for [T] {
     }
 }
 
-#[cfg(no_alloc)]
+#[cfg(feature = "no_alloc")]
 impl<A: arrayvec::Array> Slice<A::Item> for arrayvec::ArrayVec<A> {
     #[inline]
     fn as_slice(&self) -> &[A::Item] {
@@ -138,7 +138,7 @@ impl<A: arrayvec::Array> Slice<A::Item> for arrayvec::ArrayVec<A> {
     }
 }
 
-#[cfg(not(no_alloc))]
+#[cfg(not(feature = "no_alloc"))]
 impl<T> Slice<T> for crate::lib::Vec<T> {
     #[inline]
     fn as_slice(&self) -> &[T] {
