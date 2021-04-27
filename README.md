@@ -52,6 +52,25 @@ Therefore, to use the library, you need functionality that extracts the signific
 
 For an in-depth explanation on the algorithms minimal-lexical uses, please see [lexical-core#string-to-float](https://github.com/Alexhuszagh/rust-lexical/tree/master/lexical-core#string-to-float).
 
+# Platform Support
+
+minimal-lexical is tested on a wide variety of platforms, including big and small-endian systems, to ensure portable code. Supported architectures include:
+- x86_64 Linux, Windows, macOS, Android, iOS, FreeBSD, and NetBSD.
+- x86 Linux, macOS, Android, iOS, and FreeBSD.
+- aarch64 (ARM8v8-A) Linux, Android, and iOS.
+- armv7 (ARMv7-A) Linux, Android, and iOS.
+- arm (ARMv6) Linux, and Android.
+- mips (MIPS) Linux.
+- mipsel (MIPS LE) Linux.
+- mips64 (MIPS64 BE) Linux.
+- mips64el (MIPS64 LE) Linux.
+- powerpc (PowerPC) Linux.
+- powerpc64 (PPC64) Linux.
+- powerpc64le (PPC64LE) Linux.
+- s390x (IBM Z) Linux.
+
+minimal-lexical should also work on a wide variety of other architectures and ISAs. If you have any issue compiling minimal-lexical on any architecture, please file a bug report.
+
 # Minimum Version Support
 
 Minimal-lexical is tested to support Rustc 1.31+, including stable, beta, and nightly. Please report any errors compiling a supported lexical version on a compatible Rustc version.
