@@ -4,7 +4,7 @@
 //! buffers, so for a `vec![0, 1, 2, 3]`, `3` is the most significant limb,
 //! and `0` is the least significant limb.
 
-use crate::lib::{cmp, iter, mem, ptr};
+use crate::lib::{cmp, iter, mem, ptr, ops};
 use crate::num::*;
 use crate::large_powers;
 use crate::slice::*;
@@ -257,48 +257,85 @@ impl Hi64<u64> for [u64] {
 /// warning. Smallvec is similarly licensed under an MIT/Apache dual license.
 ///
 /// [`smallvec`]: https://github.com/servo/rust-smallvec
-fn insert_many<Iter>(vec: &mut LimbVecType, index: usize, iterable: Iter)
+pub fn insert_many<Iter>(vec: &mut LimbVecType, index: usize, iterable: Iter)
     where Iter: iter::IntoIterator<Item=Limb>
 {
-    let iter = iterable.into_iter();
+    let mut iter = iterable.into_iter();
     if index == vec.len() {
         return vec.extend(iter);
     }
 
     let (lower_size_bound, _) = iter.size_hint();
-    assert!(lower_size_bound <= isize::max_value() as usize);   // Ensure offset is indexable
-    assert!(index + lower_size_bound >= index);                 // Protect against overflow
+    assert!(lower_size_bound <= core::isize::MAX as usize); // Ensure offset is indexable
+    assert!(index + lower_size_bound >= index); // Protect against overflow
+
+    let mut num_added = 0;
+    let old_len = vec.len();
+    assert!(index <= old_len);
 
     unsafe {
-        let old_len = vec.len();
-        assert!(index <= old_len);
-        let mut ptr = vec.as_mut_ptr().add(index);
+        // Reserve space for `lower_size_bound` elements.
+        vec.reserve(lower_size_bound);
+        let start = vec.as_mut_ptr();
+        let ptr = start.add(index);
 
         // Move the trailing elements.
         ptr::copy(ptr, ptr.add(lower_size_bound), old_len - index);
 
         // In case the iterator panics, don't double-drop the items we just copied above.
-        vec.set_len(index);
+        vec.set_len(0);
+        let mut guard = DropOnPanic {
+            start,
+            skip: index..(index + lower_size_bound),
+            len: old_len + lower_size_bound,
+        };
 
-        let mut num_added = 0;
-        for element in iter {
-            let mut cur = ptr.add(num_added);
-            if num_added >= lower_size_bound {
-                // Iterator provided more elements than the hint.  Move trailing items again.
-                reserve(vec, 1);
-                ptr = vec.as_mut_ptr().add(index);
-                cur = ptr.add(num_added);
-                ptr::copy(cur, cur.add(1), old_len - index);
-            }
+        while num_added < lower_size_bound {
+            let element = match iter.next() {
+                Some(x) => x,
+                None => break,
+            };
+            let cur = ptr.add(num_added);
             ptr::write(cur, element);
+            guard.skip.start += 1;
             num_added += 1;
         }
-        if num_added < lower_size_bound {
-            // Iterator provided fewer elements than the hint
-            ptr::copy(ptr.add(lower_size_bound), ptr.add(num_added), old_len - index);
-        }
 
+        if num_added < lower_size_bound {
+            // Iterator provided fewer elements than the hint. Move the tail backward.
+            ptr::copy(
+                ptr.add(lower_size_bound),
+                ptr.add(num_added),
+                old_len - index,
+            );
+        }
+        // There are no more duplicate or uninitialized slots, so the guard is not needed.
         vec.set_len(old_len + num_added);
+        mem::forget(guard);
+    }
+
+    // Insert any remaining elements one-by-one.
+    for element in iter {
+        vec.insert(index + num_added, element);
+        num_added += 1;
+    }
+
+    struct DropOnPanic<T> {
+        start: *mut T,
+        skip: ops::Range<usize>, // Space we copied-out-of, but haven't written-to yet.
+        len: usize,
+    }
+
+    impl<T> Drop for DropOnPanic<T> {
+        fn drop(&mut self) {
+            for i in 0..self.len {
+                if !self.skip.contains(&i) {
+                    unsafe {
+                        ptr::drop_in_place(self.start.add(i));
+                    }
+                }
+            }
+        }
     }
 }
 
