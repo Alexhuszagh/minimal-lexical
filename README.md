@@ -8,6 +8,23 @@ This is a minimal version of [rust-lexical](https://github.com/Alexhuszagh/rust-
 
 Due to the small, stable nature of minimal-lexical, it is also well-adapted to private forks. If you do privately fork minimal-lexical, I recommend you contact me via [email](mailto:ahuszagh@gmail.com) or [Twitter](https://twitter.com/KardOnIce), so I can notify you of feature updates, bug fixes, or security vulnerabilities, as well as help you implement custom feature requests. I will not use your information for any other purpose, including, but not limited to disclosing your project or organization's use of minimal-lexical.
 
+minimal-lexical is designed for fast compile times and small binaries sizes, at the expense of a minor amount of performance. For improved performance, feel free to fork minimal-lexical with more aggressive inlining.
+
+**Similar Projects**
+
+For a high-level, all-in-one number conversion routines, see [rust-lexical](https://github.com/Alexhuszagh/rust-lexical). For language bindings to lexical, see [lexical-capi](https://github.com/Alexhuszagh/rust-lexical/tree/master/lexical-capi).
+
+**Table Of Contents**
+
+- [Getting Started](#getting-started)
+- [Recipes](#recipes)
+- [Algorithms](#algorithms)
+- [Platform Support](platform-support)
+- [Minimum Version Support](minimum-version-support)
+- [Changelog](#changelog)
+- [License](#license)
+- [Contributing](#contributing)
+
 # Getting Started
 
 First, add the following to your `Cargo.toml`.
@@ -74,6 +91,10 @@ minimal-lexical should also work on a wide variety of other architectures and IS
 # Minimum Version Support
 
 Minimal-lexical is tested to support Rustc 1.31+, including stable, beta, and nightly. Please report any errors compiling a supported lexical version on a compatible Rustc version.
+
+# Changelog
+
+All changes are documented in [CHANGELOG](CHANGELOG).
 
 # License
 
