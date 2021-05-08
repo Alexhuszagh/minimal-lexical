@@ -202,7 +202,15 @@ number_impl! { u8 u16 u32 u64 u128 usize i8 i16 i32 i64 i128 isize f32 f64 }
 
 /// Defines a trait that supports integral operations.
 pub trait Integer:
-    Number + ops::BitAnd<Output = Self> + ops::BitAndAssign + ops::Shr<i32, Output = Self>
+    Number
+    + ops::BitAnd<Output = Self>
+    + ops::BitAndAssign
+    + ops::BitOr<Output = Self>
+    + ops::BitOrAssign
+    + ops::Shr<i32, Output = Self>
+    + ops::ShrAssign<i32>
+    + ops::Shl<i32, Output = Self>
+    + ops::ShlAssign<i32>
 {
     const ZERO: Self;
 }
