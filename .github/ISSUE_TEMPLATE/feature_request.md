@@ -17,9 +17,8 @@ A clear and concise description of what you want to happen.
 
 If applicable to the feature request, here are a few things you should provide to help me understand the issue:
 
-- Rust version : `rustc -V`
-- minimal-lexical version :
-- minimal-lexical compilation features used:
+- Rust version: `rustc -V`
+- minimal-lexical version:
 
 ## Alternatives
 A clear and concise description of any alternative solutions or features you've considered.

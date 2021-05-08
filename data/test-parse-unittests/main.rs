@@ -23,7 +23,7 @@ fn parse_sign<'a>(bytes: &'a [u8]) -> (bool, &'a [u8]) {
     match bytes.get(0) {
         Some(&b'+') => (true, &bytes[1..]),
         Some(&b'-') => (false, &bytes[1..]),
-        _           => (true, bytes)
+        _ => (true, bytes),
     }
 }
 
@@ -36,17 +36,13 @@ fn to_digit(c: u8) -> Option<u32> {
 // Add digit from exponent.
 #[inline]
 fn add_digit_i32(value: i32, digit: u32) -> Option<i32> {
-    return value
-        .checked_mul(10)?
-        .checked_add(digit as i32)
+    return value.checked_mul(10)?.checked_add(digit as i32);
 }
 
 // Subtract digit from exponent.
 #[inline]
 fn sub_digit_i32(value: i32, digit: u32) -> Option<i32> {
-    return value
-        .checked_mul(10)?
-        .checked_sub(digit as i32)
+    return value.checked_mul(10)?.checked_sub(digit as i32);
 }
 
 // Convert character to digit.
@@ -57,9 +53,7 @@ fn is_digit(c: u8) -> bool {
 
 // Split buffer at index.
 #[inline]
-fn split_at_index<'a>(digits: &'a [u8], index: usize)
-    -> (&'a [u8], &'a [u8])
-{
+fn split_at_index<'a>(digits: &'a [u8], index: usize) -> (&'a [u8], &'a [u8]) {
     (&digits[..index], &digits[index..])
 }
 
@@ -67,9 +61,7 @@ fn split_at_index<'a>(digits: &'a [u8], index: usize)
 ///
 /// - `digits`      - Slice containing 0 or more digits.
 #[inline]
-fn consume_digits<'a>(digits: &'a [u8])
-    -> (&'a [u8], &'a [u8])
-{
+fn consume_digits<'a>(digits: &'a [u8]) -> (&'a [u8], &'a [u8]) {
     // Consume all digits.
     let mut index = 0;
     while index < digits.len() && is_digit(digits[index]) {
@@ -104,11 +96,11 @@ fn parse_exponent(exponent: &[u8], is_positive: bool) -> i32 {
     // Parse the sign bit or current data.
     let mut value: i32 = 0;
     match is_positive {
-        true  => {
+        true => {
             for c in exponent {
                 value = match add_digit_i32(value, to_digit(*c).unwrap()) {
                     Some(v) => v,
-                    None    => return i32::max_value(),
+                    None => return i32::max_value(),
                 };
             }
         },
@@ -116,10 +108,10 @@ fn parse_exponent(exponent: &[u8], is_positive: bool) -> i32 {
             for c in exponent {
                 value = match sub_digit_i32(value, to_digit(*c).unwrap()) {
                     Some(v) => v,
-                    None    => return i32::min_value(),
+                    None => return i32::min_value(),
                 };
             }
-        }
+        },
     }
 
     value
@@ -128,9 +120,9 @@ fn parse_exponent(exponent: &[u8], is_positive: bool) -> i32 {
 /// Parse float from input bytes, returning the float and the remaining bytes.
 ///
 /// * `bytes`    - Array of bytes leading with float-data.
-fn parse_float<'a, F>(bytes: &'a [u8])
-    -> (F, &'a [u8])
-    where F: minimal_lexical::Float
+fn parse_float<'a, F>(bytes: &'a [u8]) -> (F, &'a [u8])
+where
+    F: minimal_lexical::Float,
 {
     // Parse the sign.
     let (is_positive, bytes) = parse_sign(bytes);
@@ -139,7 +131,7 @@ fn parse_float<'a, F>(bytes: &'a [u8])
     let (integer_slc, bytes) = consume_digits(bytes);
     let (fraction_slc, bytes) = match bytes.first() {
         Some(&b'.') => consume_digits(&bytes[1..]),
-        _           => (&bytes[..0], bytes),
+        _ => (&bytes[..0], bytes),
     };
     let (exponent, bytes) = match bytes.first() {
         Some(&b'e') | Some(&b'E') => {
@@ -148,7 +140,7 @@ fn parse_float<'a, F>(bytes: &'a [u8])
             let (exponent, bytes) = consume_digits(bytes);
             (parse_exponent(exponent, is_positive), bytes)
         },
-        _                         =>  (0, bytes),
+        _ => (0, bytes),
     };
 
     // Trim leading and trailing zeros.
@@ -156,7 +148,8 @@ fn parse_float<'a, F>(bytes: &'a [u8])
     let fraction_slc = rtrim_zero(fraction_slc);
 
     // Create the float and return our data.
-    let mut float: F = minimal_lexical::parse_float(integer_slc.iter(), fraction_slc.iter(), exponent);
+    let mut float: F =
+        minimal_lexical::parse_float(integer_slc.iter(), fraction_slc.iter(), exponent);
     if !is_positive {
         float = -float;
     }
@@ -203,18 +196,12 @@ pub fn build_dir() -> PathBuf {
 
 /// Return the `target` directory path.
 pub fn target_dir() -> PathBuf {
-    build_dir()
-        .parent()
-        .expect("target directory")
-        .to_path_buf()
+    build_dir().parent().expect("target directory").to_path_buf()
 }
 
 /// Return the project directory path.
 pub fn project_dir() -> PathBuf {
-    target_dir()
-        .parent()
-        .expect("project directory")
-        .to_path_buf()
+    target_dir().parent().expect("project directory").to_path_buf()
 }
 
 /// Return the `data` directory path.
@@ -263,10 +250,7 @@ fn parse_tests(name: &str) -> StrtodTests {
 }
 
 fn main() {
-    let filenames = [
-        "strtod_tests.toml",
-        "rust_parse_tests.toml",
-    ];
+    let filenames = ["strtod_tests.toml", "rust_parse_tests.toml"];
     for filename in filenames.iter() {
         println!("Running Test: {}", filename);
         run_tests(parse_tests(filename));

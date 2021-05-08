@@ -15,9 +15,8 @@ Please include a clear and concise description of the bug. If the bug includes a
 
 Here are a few things you should provide to help me understand the issue:
 
-- Rust version : `rustc -V`
-- minimal-lexical version :
-- minimal-lexical compilation features used:
+- Rust version: `rustc -V`
+- minimal-lexical version:
 
 ## Test case
 

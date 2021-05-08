@@ -13,9 +13,9 @@ use super::small_powers::*;
 /// Convert mantissa to exact value for a non-base2 power.
 ///
 /// Returns the resulting float and if the value can be represented exactly.
-pub(crate) fn fast_path<F>(mantissa: u64, exponent: i32)
-    -> Option<F>
-    where F: Float
+pub(crate) fn fast_path<F>(mantissa: u64, exponent: i32) -> Option<F>
+where
+    F: Float,
 {
     // `mantissa >> (F::MANTISSA_SIZE+1) != 0` effectively checks if the
     // value has a no bits above the hidden bit, which is what we want.
@@ -71,9 +71,9 @@ pub(crate) fn fast_path<F>(mantissa: u64, exponent: i32)
 /// Multiply by pre-calculated powers of the base, modify the extended-
 /// float, and return if new value and if the value can be represented
 /// accurately.
-fn multiply_exponent_extended<F>(fp: &mut ExtendedFloat, exponent: i32, truncated: bool)
-    -> bool
-    where F: Float
+fn multiply_exponent_extended<F>(fp: &mut ExtendedFloat, exponent: i32, truncated: bool) -> bool
+where
+    F: Float,
 {
     let powers = ExtendedFloat::get_powers();
     let exponent = exponent.saturating_add(powers.bias);
@@ -103,7 +103,7 @@ fn multiply_exponent_extended<F>(fp: &mut ExtendedFloat, exponent: i32, truncate
         // use extended-precision multiplication.
         match fp.mant.overflowing_mul(powers.get_small_int(small_index.as_usize())) {
             // Overflow, multiplication unsuccessful, go slow path.
-            (_, true)     => {
+            (_, true) => {
                 fp.normalize();
                 fp.imul(&powers.get_small(small_index.as_usize()));
                 errors += u64::error_halfscale();
@@ -136,9 +136,13 @@ fn multiply_exponent_extended<F>(fp: &mut ExtendedFloat, exponent: i32, truncate
 /// represented with mantissa bits of precision.
 #[inline]
 fn moderate_path<F>(mantissa: u64, exponent: i32, truncated: bool) -> (ExtendedFloat, bool)
-    where F: Float
+where
+    F: Float,
 {
-    let mut fp = ExtendedFloat { mant: mantissa, exp: 0 };
+    let mut fp = ExtendedFloat {
+        mant: mantissa,
+        exp: 0,
+    };
     let valid = multiply_exponent_extended::<F>(&mut fp, exponent, truncated);
     (fp, valid)
 }
@@ -155,11 +159,12 @@ pub(crate) fn fallback_path<'a, F, Iter1, Iter2>(
     mantissa: u64,
     exponent: i32,
     mantissa_exponent: i32,
-    truncated: bool
+    truncated: bool,
 ) -> F
-    where F: Float,
-          Iter1: Iterator<Item=&'a u8> + Clone,
-          Iter2: Iterator<Item=&'a u8> + Clone
+where
+    F: Float,
+    Iter1: Iterator<Item = &'a u8> + Clone,
+    Iter2: Iterator<Item = &'a u8> + Clone,
 {
     // Moderate path (use an extended 80-bit representation).
     let (fp, valid) = moderate_path::<F>(mantissa, mantissa_exponent, truncated);
@@ -189,7 +194,7 @@ mod tests {
         // valid
         let mantissa = (1 << f32::MANTISSA_SIZE) - 1;
         let (min_exp, max_exp) = f32::exponent_limit();
-        for exp in min_exp..max_exp+1 {
+        for exp in min_exp..max_exp + 1 {
             let f = fast_path::<f32>(mantissa, exp);
             assert!(f.is_some(), "should be valid {:?}.", (mantissa, exp));
         }
@@ -207,18 +212,19 @@ mod tests {
         assert!(f.is_none());
 
         // invalid mantissa
-        #[cfg(feature = "radix")] {
+        #[cfg(feature = "radix")]
+        {
             let (_, max_exp) = f64::exponent_limit(3);
-            let f = fast_path::<f32>(1<<f32::MANTISSA_SIZE, 3, max_exp+1);
+            let f = fast_path::<f32>(1 << f32::MANTISSA_SIZE, 3, max_exp + 1);
             assert!(f.is_none(), "invalid mantissa");
         }
 
         // invalid exponents
         let (min_exp, max_exp) = f32::exponent_limit();
-        let f = fast_path::<f32>(mantissa, min_exp-1);
+        let f = fast_path::<f32>(mantissa, min_exp - 1);
         assert!(f.is_none(), "exponent under min_exp");
 
-        let f = fast_path::<f32>(mantissa, max_exp+1);
+        let f = fast_path::<f32>(mantissa, max_exp + 1);
         assert!(f.is_none(), "exponent above max_exp");
     }
 
@@ -227,24 +233,25 @@ mod tests {
         // valid
         let mantissa = (1 << f64::MANTISSA_SIZE) - 1;
         let (min_exp, max_exp) = f64::exponent_limit();
-        for exp in min_exp..max_exp+1 {
+        for exp in min_exp..max_exp + 1 {
             let f = fast_path::<f64>(mantissa, exp);
             assert!(f.is_some(), "should be valid {:?}.", (mantissa, exp));
         }
 
         // invalid mantissa
-        #[cfg(feature = "radix")] {
+        #[cfg(feature = "radix")]
+        {
             let (_, max_exp) = f64::exponent_limit(3);
-            let f = fast_path::<f64>(1<<f64::MANTISSA_SIZE, 3, max_exp+1);
+            let f = fast_path::<f64>(1 << f64::MANTISSA_SIZE, 3, max_exp + 1);
             assert!(f.is_none(), "invalid mantissa");
         }
 
         // invalid exponents
         let (min_exp, max_exp) = f64::exponent_limit();
-        let f = fast_path::<f64>(mantissa, min_exp-1);
+        let f = fast_path::<f64>(mantissa, min_exp - 1);
         assert!(f.is_none(), "exponent under min_exp");
 
-        let f = fast_path::<f64>(mantissa, max_exp+1);
+        let f = fast_path::<f64>(mantissa, max_exp + 1);
         assert!(f.is_none(), "exponent above max_exp");
 
         assert_eq!(Some(0.04628372940652459), fast_path::<f64>(4628372940652459, -17));
