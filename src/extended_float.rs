@@ -6,9 +6,9 @@
 //! found here:
 //!     https://golang.org/src/strconv/atof.go
 
-use super::cached::*;
 use super::float::*;
 use super::num::*;
+use super::powers::*;
 use super::rounding::*;
 
 // ERRORS
@@ -134,15 +134,11 @@ fn multiply_exponent_extended<F>(fp: &mut ExtendedFloat, exponent: i32, truncate
 where
     F: Float,
 {
-    let powers = ExtendedFloat::get_powers();
-    let exponent = exponent.saturating_add(powers.bias);
-    let small_index = exponent % powers.step;
-    let large_index = exponent / powers.step;
-    if exponent < 0 {
+    if exponent < MIN_DENORMAL_EXP10 {
         // Guaranteed underflow (assign 0).
         fp.mant = 0;
         true
-    } else if large_index as usize >= powers.large.len() {
+    } else if exponent > MAX_NORMAL_EXP10 {
         // Overflow (assign infinity)
         fp.mant = 1 << 63;
         fp.exp = 0x7FF;
@@ -157,25 +153,15 @@ where
             errors += error_halfscale();
         }
 
-        // Multiply by the small power.
-        // Check if we can directly multiply by an integer, if not,
-        // use extended-precision multiplication.
-        match fp.mant.overflowing_mul(powers.get_small_int(small_index.as_usize())) {
-            // Overflow, multiplication unsuccessful, go slow path.
-            (_, true) => {
-                fp.normalize();
-                fp.imul(&powers.get_small(small_index.as_usize()));
-                errors += error_halfscale();
-            },
-            // No overflow, multiplication successful.
-            (mant, false) => {
-                fp.mant = mant;
-                fp.normalize();
-            },
-        }
+        // Infer the binary exponent from the power of 10.
+        // Adjust this exponent to the fact the value is normalized (1<<63).
+        let exp = -63 + (217706 * exponent as i64 >> 16);
+        let mant = POWERS_OF_10[(exponent - MIN_DENORMAL_EXP10) as usize].0;
+        let large = ExtendedFloat { mant, exp: exp as i32 };
 
-        // Multiply by the large power
-        fp.imul(&powers.get_large(large_index.as_usize()));
+        // Normalize fp and multiple by large.
+        fp.normalize();
+        fp.imul(&large);
         if errors > 0 {
             errors += 1;
         }

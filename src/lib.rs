@@ -59,8 +59,6 @@ pub(crate) mod lib {
 mod algorithm;
 mod bhcomp;
 mod bignum;
-mod cached;
-mod cached_float80;
 mod digit;
 mod exponent;
 mod extended_float;
@@ -70,6 +68,7 @@ mod lemire;
 mod math;
 mod num;
 mod parse;
+mod powers;
 mod rounding;
 mod shift;
 mod slice;
