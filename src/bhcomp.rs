@@ -44,7 +44,7 @@ where
         }
 
         value *= 10;
-        value += as_limb(to_digit(digit).unwrap());
+        value += to_digit(digit).unwrap() as Limb;
 
         i += 1;
         counter += 1;
@@ -122,11 +122,11 @@ where
     // The binary exponent is the binary exponent for the mantissa
     // shifted to the hidden bit.
     let mut bigmant = parse_mantissa::<F, _>(iter);
-    bigmant.imul_pow10(exponent.as_u32());
+    bigmant.imul_pow10(exponent as u32);
 
     // Get the exact representation of the float from the big integer.
     let (mant, is_truncated) = bigmant.hi64();
-    let exp = bigmant.bit_length().as_i32() - bits.as_i32();
+    let exp = bigmant.bit_length() as i32 - bits as i32;
     let mut fp = ExtendedFloat {
         mant,
         exp,
@@ -176,15 +176,15 @@ where
 
     // Carry out our multiplication.
     if halfradix_exp != 0 {
-        theor_digits.imul_pow5(halfradix_exp.as_u32());
+        theor_digits.imul_pow5(halfradix_exp as u32);
     }
     if radix_exp != 0 {
-        theor_digits.imul_pow10(radix_exp.as_u32());
+        theor_digits.imul_pow10(radix_exp as u32);
     }
     if binary_exp > 0 {
-        theor_digits.imul_pow2(binary_exp.as_u32());
+        theor_digits.imul_pow2(binary_exp as u32);
     } else if binary_exp < 0 {
-        real_digits.imul_pow2((-binary_exp).as_u32());
+        real_digits.imul_pow2((-binary_exp) as u32);
     }
 
     // Compare real digits to theoretical digits and round the float.
@@ -217,7 +217,7 @@ where
     };
     let sci_exp = scientific_exponent(exponent, integer_digits, digits_start);
     let count = F::MAX_DIGITS.min(integer_digits + fraction_digits - digits_start);
-    let scaled_exponent = sci_exp + 1 - count.as_i32();
+    let scaled_exponent = sci_exp + 1 - count as i32;
 
     // We have a finite conversions number of digits for base10.
     // We need to then limit the iterator over that number of digits.

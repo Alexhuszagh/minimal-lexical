@@ -50,18 +50,8 @@ const F64_POW10: [f64; 23] = [
 
 /// Type that can be converted to primitive with `as`.
 pub trait AsPrimitive: Sized + Copy + PartialEq + PartialOrd + Send + Sync {
-    fn as_u8(self) -> u8;
-    fn as_u16(self) -> u16;
     fn as_u32(self) -> u32;
     fn as_u64(self) -> u64;
-    fn as_u128(self) -> u128;
-    fn as_usize(self) -> usize;
-    fn as_i8(self) -> i8;
-    fn as_i16(self) -> i16;
-    fn as_i32(self) -> i32;
-    fn as_i64(self) -> i64;
-    fn as_i128(self) -> i128;
-    fn as_isize(self) -> isize;
     fn as_f32(self) -> f32;
     fn as_f64(self) -> f64;
 }
@@ -70,16 +60,6 @@ macro_rules! as_primitive_impl {
     ($($t:tt)*) => ($(
         impl AsPrimitive for $t {
             #[inline]
-            fn as_u8(self) -> u8 {
-                self as u8
-            }
-
-            #[inline]
-            fn as_u16(self) -> u16 {
-                self as u16
-            }
-
-            #[inline]
             fn as_u32(self) -> u32 {
                 self as u32
             }
@@ -87,46 +67,6 @@ macro_rules! as_primitive_impl {
             #[inline]
             fn as_u64(self) -> u64 {
                 self as u64
-            }
-
-            #[inline]
-            fn as_u128(self) -> u128 {
-                self as u128
-            }
-
-            #[inline]
-            fn as_usize(self) -> usize {
-                self as usize
-            }
-
-            #[inline]
-            fn as_i8(self) -> i8 {
-                self as i8
-            }
-
-            #[inline]
-            fn as_i16(self) -> i16 {
-                self as i16
-            }
-
-            #[inline]
-            fn as_i32(self) -> i32 {
-                self as i32
-            }
-
-            #[inline]
-            fn as_i64(self) -> i64 {
-                self as i64
-            }
-
-            #[inline]
-            fn as_i128(self) -> i128 {
-                self as i128
-            }
-
-            #[inline]
-            fn as_isize(self) -> isize {
-                self as isize
             }
 
             #[inline]
@@ -142,7 +82,7 @@ macro_rules! as_primitive_impl {
     )*)
 }
 
-as_primitive_impl! { u8 u16 u32 u64 u128 usize i8 i16 i32 i64 i128 isize f32 f64 }
+as_primitive_impl! { u32 u64 f32 f64 }
 
 /// An interface for casting between machine scalars.
 pub trait AsCast: AsPrimitive {
@@ -162,18 +102,8 @@ macro_rules! as_cast_impl {
     };
 }
 
-as_cast_impl!(u8, as_u8);
-as_cast_impl!(u16, as_u16);
 as_cast_impl!(u32, as_u32);
 as_cast_impl!(u64, as_u64);
-as_cast_impl!(u128, as_u128);
-as_cast_impl!(usize, as_usize);
-as_cast_impl!(i8, as_i8);
-as_cast_impl!(i16, as_i16);
-as_cast_impl!(i32, as_i32);
-as_cast_impl!(i64, as_i64);
-as_cast_impl!(i128, as_i128);
-as_cast_impl!(isize, as_isize);
 as_cast_impl!(f32, as_f32);
 as_cast_impl!(f64, as_f64);
 
@@ -200,7 +130,7 @@ macro_rules! number_impl {
     )*)
 }
 
-number_impl! { u8 u16 u32 u64 u128 usize i8 i16 i32 i64 i128 isize f32 f64 }
+number_impl! { u32 u64 f32 f64 }
 
 /// Defines a trait that supports integral operations.
 pub trait Integer:
@@ -225,7 +155,7 @@ macro_rules! integer_impl {
     )*)
 }
 
-integer_impl! { u8 u16 u32 u64 u128 usize i8 i16 i32 i64 i128 isize }
+integer_impl! { u32 u64 }
 
 /// Type trait for the mantissa type.
 pub trait Mantissa: Integer {
@@ -359,7 +289,7 @@ pub trait Float: Number + ops::Neg<Output = Self> {
         }
 
         let bits = self.to_bits();
-        let biased_e: i32 = ((bits & Self::EXPONENT_MASK) >> Self::MANTISSA_SIZE).as_i32();
+        let biased_e: i32 = ((bits & Self::EXPONENT_MASK).as_u64() >> Self::MANTISSA_SIZE) as i32;
         biased_e - Self::EXPONENT_BIAS
     }
 
@@ -380,13 +310,13 @@ pub trait Float: Number + ops::Neg<Output = Self> {
     #[inline]
     fn next_positive(self) -> Self {
         debug_assert!(self.is_sign_positive() && !self.is_inf());
-        Self::from_bits(self.to_bits() + Self::Unsigned::as_cast(1))
+        Self::from_bits(self.to_bits() + Self::Unsigned::as_cast(1u32))
     }
 
     /// Round a positive number to even.
     #[inline]
     fn round_positive_even(self) -> Self {
-        if self.mantissa() & Self::Unsigned::as_cast(1) == Self::Unsigned::as_cast(1) {
+        if self.mantissa() & Self::Unsigned::as_cast(1u32) == Self::Unsigned::as_cast(1u32) {
             self.next_positive()
         } else {
             self

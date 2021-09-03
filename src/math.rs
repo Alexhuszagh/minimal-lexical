@@ -111,7 +111,10 @@ type Wide = u128;
 
 // Maximum denominator is 767 mantissa digits + 324 exponent,
 // or 1091 digits, or approximately 3600 bits (round up to 4k).
-#[cfg(all(feature = "no_alloc", not(all(target_pointer_width = "64", not(target_arch = "sparc")))))]
+#[cfg(all(
+    feature = "no_alloc",
+    not(all(target_pointer_width = "64", not(target_arch = "sparc")))
+))]
 pub type LimbVecType = arrayvec::ArrayVec<[Limb; 128]>;
 
 #[cfg(all(feature = "no_alloc", all(target_pointer_width = "64", not(target_arch = "sparc"))))]
@@ -120,18 +123,6 @@ pub type LimbVecType = arrayvec::ArrayVec<[Limb; 64]>;
 #[cfg(not(feature = "no_alloc"))]
 pub type LimbVecType = Vec<Limb>;
 
-/// Cast to limb type.
-#[inline(always)]
-pub(crate) fn as_limb<T: Integer>(t: T) -> Limb {
-    Limb::as_cast(t)
-}
-
-/// Cast to wide type.
-#[inline(always)]
-fn as_wide<T: Integer>(t: T) -> Wide {
-    Wide::as_cast(t)
-}
-
 // SPLIT
 // -----
 
@@ -139,14 +130,14 @@ fn as_wide<T: Integer>(t: T) -> Wide {
 #[inline]
 #[cfg(not(all(target_pointer_width = "64", not(target_arch = "sparc"))))]
 fn split_u64(x: u64) -> [Limb; 2] {
-    [as_limb(x), as_limb(x >> 32)]
+    [x as Limb, (x >> 32) as Limb]
 }
 
 /// Split u64 into limbs, in little-endian order.
 #[inline]
 #[cfg(all(target_pointer_width = "64", not(target_arch = "sparc")))]
 fn split_u64(x: u64) -> [Limb; 1] {
-    [as_limb(x)]
+    [x as Limb]
 }
 
 // HI64
@@ -220,7 +211,7 @@ impl Hi64<u32> for [u32] {
     fn hi64_1(&self) -> (u64, bool) {
         debug_assert!(self.len() == 1);
         let rview = self.rview();
-        let r0 = rview[0].as_u64();
+        let r0 = rview[0] as u64;
         u64_to_hi64_1(r0)
     }
 
@@ -228,8 +219,8 @@ impl Hi64<u32> for [u32] {
     fn hi64_2(&self) -> (u64, bool) {
         debug_assert!(self.len() == 2);
         let rview = self.rview();
-        let r0 = rview[0].as_u64() << 32;
-        let r1 = rview[1].as_u64();
+        let r0 = (rview[0] as u64) << 32;
+        let r1 = rview[1] as u64;
         u64_to_hi64_1(r0 | r1)
     }
 
@@ -237,9 +228,9 @@ impl Hi64<u32> for [u32] {
     fn hi64_3(&self) -> (u64, bool) {
         debug_assert!(self.len() >= 3);
         let rview = self.rview();
-        let r0 = rview[0].as_u64();
-        let r1 = rview[1].as_u64() << 32;
-        let r2 = rview[2].as_u64();
+        let r0 = rview[0] as u64;
+        let r1 = (rview[1] as u64) << 32;
+        let r2 = rview[2] as u64;
         let (v, n) = u64_to_hi64_2(r0, r1 | r2);
         (v, n || nonzero(self, 3))
     }
@@ -501,9 +492,9 @@ mod scalar {
         // Cannot overflow, as long as wide is 2x as wide. This is because
         // the following is always true:
         // `Wide::max_value() - (Narrow::max_value() * Narrow::max_value()) >= Narrow::max_value()`
-        let z: Wide = as_wide(x) * as_wide(y) + as_wide(carry);
+        let z: Wide = x as Wide * y as Wide + carry as Wide;
         let bits = mem::size_of::<Limb>() * 8;
-        (as_limb(z), as_limb(z >> bits))
+        (z as Limb, (z >> bits) as Limb)
     }
 
     /// Multiply two small integers (with carry) (and return if overflow happens).
@@ -654,7 +645,7 @@ mod small {
         // We want to use the asymptotically faster algorithm if we're going
         // to be using Karabatsu multiplication sometime during the result,
         // otherwise, just use exponentiation by squaring.
-        let bit_length = 32 - n.leading_zeros().as_usize();
+        let bit_length = 32 - n.leading_zeros() as usize;
         debug_assert!(bit_length != 0 && bit_length <= large_powers.len());
         if x.len() + large_powers[bit_length - 1].len() < 2 * KARATSUBA_CUTOFF {
             // We can use iterative small powers to make this faster for the
@@ -663,7 +654,7 @@ mod small {
             // Multiply by the largest small power until n < step.
             let step = small_powers.len() - 1;
             let power = small_powers[step];
-            let mut n = n.as_usize();
+            let mut n = n as usize;
             while n >= step {
                 imul(x, power);
                 n -= step;
@@ -679,7 +670,7 @@ mod small {
             // Multiply by higher order powers.
             let mut idx: usize = 0;
             let mut bit: usize = 1;
-            let mut n = n.as_usize();
+            let mut n = n as usize;
             while n != 0 {
                 if n & bit != 0 {
                     debug_assert!(idx < large_powers.len());
@@ -700,7 +691,7 @@ mod small {
         if x.is_empty() {
             0
         } else {
-            x.rindex(0).leading_zeros().as_usize()
+            x.rindex(0).leading_zeros() as usize
         }
     }
 
@@ -1115,7 +1106,7 @@ pub trait Math: Clone + Sized + Default {
     /// Multiply by a power of 2.
     #[inline]
     fn imul_pow2(&mut self, n: u32) {
-        self.ishl(n.as_usize())
+        self.ishl(n as usize)
     }
 
     /// Multiply by a power of 5.

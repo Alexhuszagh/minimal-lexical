@@ -42,7 +42,7 @@ where
         // https://www.exploringbinary.com/fast-path-decimal-to-floating-point-conversion/
         let small_powers = POW10_64;
         let shift = exponent - max_exp;
-        let power = small_powers[shift.as_usize()];
+        let power = small_powers[shift as usize];
 
         // Compute the product of the power, if it overflows,
         // prematurely return early, otherwise, if we didn't overshoot,

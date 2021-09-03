@@ -76,9 +76,9 @@ fn shift_to_carry(x_hi: u64, exp2: i32, carry_shift: i32) -> (u64, i32) {
     // Carry out the shift
     let msb_shift = u64::FULL - 1;
     let msb = x_hi >> msb_shift;
-    let shift = msb.as_i32() + carry_shift;
+    let shift = msb as i32 + carry_shift;
     let mantissa = x_hi >> shift;
-    let exp2 = exp2 - (1i32 ^ msb.as_i32());
+    let exp2 = exp2 - (1i32 ^ msb as i32);
 
     (mantissa, exp2)
 }
@@ -109,12 +109,12 @@ where
     }
 
     // Get our raw bits.
-    let mut exp = F::Unsigned::as_cast(exp);
+    let mut exp = F::Unsigned::as_cast(exp as u32);
     let mut mantissa = F::Unsigned::as_cast(mantissa);
 
     // Round-nearest, tie-even.
     let zero = F::Unsigned::ZERO;
-    let one = F::Unsigned::as_cast(1);
+    let one = F::Unsigned::as_cast(1u32);
     mantissa += mantissa & one;
 
     // Shift them into position.
@@ -132,7 +132,7 @@ where
 
     // Check for overflow, if so, return a literal infinity.
     let max_exp = F::MAX_EXPONENT + F::EXPONENT_BIAS;
-    if exp >= F::Unsigned::as_cast(max_exp) {
+    if exp >= F::Unsigned::as_cast(max_exp as u32) {
         let float = F::from_bits(F::INFINITY_BITS);
         return (float, true);
     }
