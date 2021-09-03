@@ -50,13 +50,13 @@ impl<T> RSliceIndex<[T]> for usize {
     #[inline]
     unsafe fn rget_unchecked(self, slc: &[T]) -> &T {
         let len = slc.len();
-        slc.get_unchecked(len - self - 1)
+        unsafe { slc.get_unchecked(len - self - 1) }
     }
 
     #[inline]
     unsafe fn rget_unchecked_mut(self, slc: &mut [T]) -> &mut T {
         let len = slc.len();
-        slc.get_unchecked_mut(len - self - 1)
+        unsafe { slc.get_unchecked_mut(len - self - 1) }
     }
 
     #[inline]

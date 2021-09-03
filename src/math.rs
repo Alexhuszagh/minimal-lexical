@@ -4,12 +4,12 @@
 //! buffers, so for a `vec![0, 1, 2, 3]`, `3` is the most significant limb,
 //! and `0` is the least significant limb.
 
-#[cfg(all(not(feature = "no_alloc"), not(feature = "std")))]
-use alloc::vec::Vec;
 use crate::large_powers;
 use crate::num::*;
 use crate::slice::*;
 use crate::small_powers::*;
+#[cfg(all(not(feature = "no_alloc"), not(feature = "std")))]
+use alloc::vec::Vec;
 use core::ops::RangeBounds;
 use core::{cmp, iter, mem, ops, ptr};
 #[cfg(all(not(feature = "no_alloc"), feature = "std"))]
