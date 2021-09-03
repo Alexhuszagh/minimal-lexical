@@ -1,7 +1,6 @@
 [package]
 authors = ["Alex Huszagh <ahuszagh@gmail.com>"]
 autoexamples = false
-build = "build.rs"
 categories = ["parsing", "no-std"]
 description = "Fast float parsing conversion routines."
 documentation = "https://docs.rs/minimal-lexical"

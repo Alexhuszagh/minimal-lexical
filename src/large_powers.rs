@@ -2,8 +2,8 @@
 
 #![doc(hidden)]
 
-#[cfg(limb_width_32)]
+#[cfg(not(all(target_pointer_width = "64", not(target_arch = "sparc"))))]
 pub use crate::large_powers32::*;
 
-#[cfg(limb_width_64)]
+#[cfg(all(target_pointer_width = "64", not(target_arch = "sparc")))]
 pub use crate::large_powers64::*;

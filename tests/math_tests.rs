@@ -18,12 +18,12 @@ impl Math for Bigint {
     }
 }
 
-#[cfg(limb_width_32)]
+#[cfg(not(all(target_pointer_width = "64", not(target_arch = "sparc"))))]
 fn from_u32(x: &[u32]) -> math::LimbVecType {
     x.iter().cloned().collect()
 }
 
-#[cfg(limb_width_64)]
+#[cfg(all(target_pointer_width = "64", not(target_arch = "sparc")))]
 fn from_u32(x: &[u32]) -> math::LimbVecType {
     let mut v = math::LimbVecType::default();
     for xi in x.chunks(2) {

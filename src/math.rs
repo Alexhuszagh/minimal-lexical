@@ -17,62 +17,104 @@ use core::{cmp, iter, mem, ops, ptr};
 #[cfg(all(not(feature = "no_alloc"), feature = "std"))]
 use std::vec::Vec;
 
-// ALIASES
-// -------
+// LIMB
+// ----
 
 //  Type for a single limb of the big integer.
 //
 //  A limb is analogous to a digit in base10, except, it stores 32-bit
-//  or 64-bit numbers instead.
+//  or 64-bit numbers instead. We want types where 64-bit multiplication
+//  is well-supported by the architecture, rather than emulated in 3
+//  instructions. The quickest way to check this support is using a
+//  cross-compiler for numerous architectures, along with the following
+//  source file and command:
+//
+//  Compile with `gcc main.c -c -S -O3 -masm=intel`
+//
+//  And the source code is:
+//  ```text
+//  #include <stdint.h>
+//
+//  struct i128 {
+//      uint64_t hi;
+//      uint64_t lo;
+//  };
+//
+//  // Type your code here, or load an example.
+//  struct i128 square(uint64_t x, uint64_t y) {
+//      __int128 prod = (__int128)x * (__int128)y;
+//      struct i128 z;
+//      z.hi = (uint64_t)(prod >> 64);
+//      z.lo = (uint64_t)prod;
+//      return z;
+//  }
+//  ```
+//
+//  If the result contains `call __multi3`, then the multiplication
+//  is emulated by the compiler. Otherwise, it's natively supported.
 //
 //  This should be all-known 64-bit platforms supported by Rust.
 //      https://forge.rust-lang.org/platform-support.html
 //
+//  # Supported
+//
 //  Platforms where native 128-bit multiplication is explicitly supported:
 //      - x86_64 (Supported via `MUL`).
 //      - mips64 (Supported via `DMULTU`, which `HI` and `LO` can be read-from).
+//      - s390x (Supported via `MLGR`).
+//
+//  # Efficient
 //
 //  Platforms where native 64-bit multiplication is supported and
 //  you can extract hi-lo for 64-bit multiplications.
-//      aarch64 (Requires `UMULH` and `MUL` to capture high and low bits).
-//      powerpc64 (Requires `MULHDU` and `MULLD` to capture high and low bits).
+//      - aarch64 (Requires `UMULH` and `MUL` to capture high and low bits).
+//      - powerpc64 (Requires `MULHDU` and `MULLD` to capture high and low bits).
+//      - riscv64 (Requires `MUL` and `MULH` to capture high and low bits).
+//
+//  # Unsupported
 //
 //  Platforms where native 128-bit multiplication is not supported,
 //  requiring software emulation.
-//      sparc64 (`UMUL` only supported double-word arguments).
+//      sparc64 (`UMUL` only supports double-word arguments).
+//      sparcv9 (Same as sparc64).
+//
+//  These tests are run via `xcross`, my own library for C cross-compiling,
+//  which supports numerous targets (far in excess of Rust's tier 1 support,
+//  or rust-embedded/cross's list). xcross may be found here:
+//      https://github.com/Alexhuszagh/xcross
+//
+//  To compile for the given target, run:
+//      `xcross gcc main.c -c -S -O3 --target $target`
+//
+//  All 32-bit architectures inherently do not have support. That means
+//  we can essentially look for 64-bit architectures that are not SPARC.
 
 // 32-BIT LIMB
-#[cfg(limb_width_32)]
+#[cfg(not(all(target_pointer_width = "64", not(target_arch = "sparc"))))]
 pub type Limb = u32;
-
-#[cfg(limb_width_32)]
+#[cfg(not(all(target_pointer_width = "64", not(target_arch = "sparc"))))]
 pub const POW5_LIMB: &[Limb] = &POW5_32;
-
-#[cfg(limb_width_32)]
+#[cfg(not(all(target_pointer_width = "64", not(target_arch = "sparc"))))]
 pub const POW10_LIMB: &[Limb] = &POW10_32;
-
-#[cfg(limb_width_32)]
+#[cfg(not(all(target_pointer_width = "64", not(target_arch = "sparc"))))]
 type Wide = u64;
 
 // 64-BIT LIMB
-#[cfg(limb_width_64)]
+#[cfg(all(target_pointer_width = "64", not(target_arch = "sparc")))]
 pub type Limb = u64;
-
-#[cfg(limb_width_64)]
+#[cfg(all(target_pointer_width = "64", not(target_arch = "sparc")))]
 pub const POW5_LIMB: &[Limb] = &POW5_64;
-
-#[cfg(limb_width_64)]
+#[cfg(all(target_pointer_width = "64", not(target_arch = "sparc")))]
 pub const POW10_LIMB: &[Limb] = &POW10_64;
-
-#[cfg(limb_width_64)]
+#[cfg(all(target_pointer_width = "64", not(target_arch = "sparc")))]
 type Wide = u128;
 
 // Maximum denominator is 767 mantissa digits + 324 exponent,
 // or 1091 digits, or approximately 3600 bits (round up to 4k).
-#[cfg(all(feature = "no_alloc", limb_width_32))]
+#[cfg(all(feature = "no_alloc", not(all(target_pointer_width = "64", not(target_arch = "sparc")))))]
 pub type LimbVecType = arrayvec::ArrayVec<[Limb; 128]>;
 
-#[cfg(all(feature = "no_alloc", limb_width_64))]
+#[cfg(all(feature = "no_alloc", all(target_pointer_width = "64", not(target_arch = "sparc"))))]
 pub type LimbVecType = arrayvec::ArrayVec<[Limb; 64]>;
 
 #[cfg(not(feature = "no_alloc"))]
@@ -95,14 +137,14 @@ fn as_wide<T: Integer>(t: T) -> Wide {
 
 /// Split u64 into limbs, in little-endian order.
 #[inline]
-#[cfg(limb_width_32)]
+#[cfg(not(all(target_pointer_width = "64", not(target_arch = "sparc"))))]
 fn split_u64(x: u64) -> [Limb; 2] {
     [as_limb(x), as_limb(x >> 32)]
 }
 
 /// Split u64 into limbs, in little-endian order.
 #[inline]
-#[cfg(limb_width_64)]
+#[cfg(all(target_pointer_width = "64", not(target_arch = "sparc")))]
 fn split_u64(x: u64) -> [Limb; 1] {
     [as_limb(x)]
 }
