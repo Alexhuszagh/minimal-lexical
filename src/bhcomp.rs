@@ -3,14 +3,14 @@
 //! Compares the actual significant digits of the mantissa to the
 //! theoretical digits from `b+h`, scaled into the proper range.
 
-use super::bignum::*;
-use super::digit::*;
-use super::exponent::*;
-use super::float::*;
-use super::math::*;
-use super::num::*;
-use super::rounding::*;
-use crate::lib::{cmp, mem};
+use crate::bignum::*;
+use crate::digit::*;
+use crate::exponent::*;
+use crate::float::*;
+use crate::math::*;
+use crate::num::*;
+use crate::rounding::*;
+use core::{cmp, mem};
 
 // MANTISSA
 

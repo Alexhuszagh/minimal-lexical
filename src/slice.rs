@@ -1,6 +1,10 @@
 //! Traits to accept generic slices.
 
-use crate::lib::ops;
+#[cfg(all(not(feature = "no_alloc"), not(feature = "std")))]
+use alloc::vec::Vec;
+use core::ops;
+#[cfg(all(not(feature = "no_alloc"), feature = "std"))]
+use std::vec::Vec;
 
 // RSLICE INDEX
 
@@ -141,7 +145,7 @@ impl<A: arrayvec::Array> Slice<A::Item> for arrayvec::ArrayVec<A> {
 }
 
 #[cfg(not(feature = "no_alloc"))]
-impl<T> Slice<T> for crate::lib::Vec<T> {
+impl<T> Slice<T> for Vec<T> {
     #[inline]
     fn as_slice(&self) -> &[T] {
         self

@@ -1,5 +1,7 @@
 // FLOAT TYPE
 
+#![doc(hidden)]
+
 use super::num::*;
 use super::rounding::*;
 use super::shift::*;
@@ -7,9 +9,8 @@ use super::shift::*;
 /// Extended precision floating-point type.
 ///
 /// Private implementation, exposed only for testing purposes.
-#[doc(hidden)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) struct ExtendedFloat {
+pub struct ExtendedFloat {
     /// Mantissa for the extended-precision float.
     pub mant: u64,
     /// Binary exponent for the extended-precision float.
@@ -186,7 +187,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lib::{f32, f64};
+    use core::{f32, f64};
 
     // NORMALIZE
 
