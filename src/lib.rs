@@ -34,7 +34,10 @@
 
 // FEATURES
 
-// Require intrinsics in a no_std context.
+// We want to have the same safety guarantees as Rust core,
+// so we allow unused unsafe to clearly document safety guarantees.
+#![allow(unused_unsafe)]
+#![cfg_attr(feature = "lint", warn(unsafe_op_in_unsafe_fn))]
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(all(not(feature = "no_alloc"), not(feature = "std")))]

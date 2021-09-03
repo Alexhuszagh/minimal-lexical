@@ -1,0 +1,79 @@
+[package]
+name = "minimal-lexical-correctness"
+version = "0.0.1"
+authors = ["Alex Huszagh <ahuszagh@gmail.com>"]
+edition = "2018"
+publish = false
+
+[dependencies.minimal-lexical]
+path = "../.."
+default-features = false
+features = []
+
+[dependencies]
+rand_core = "0.3"
+rand_xorshift = "0.1"
+ryu = "1.0"
+rand = "0.4"
+serde = "1.0"
+serde_derive = "1.0"
+toml = "0.5"
+
+# Special testing binaries for the runtests.py scripts.
+[[bin]]
+name = "few_ones"
+path = "test-parse-random/few_ones.rs"
+
+[[bin]]
+name = "huge-pow10"
+path = "test-parse-random/huge-pow10.rs"
+
+[[bin]]
+name = "long-fractions"
+path = "test-parse-random/long-fractions.rs"
+
+[[bin]]
+name = "many-digits"
+path = "test-parse-random/many-digits.rs"
+
+[[bin]]
+name = "rand-f64"
+path = "test-parse-random/rand-f64.rs"
+
+[[bin]]
+name = "short-decimals"
+path = "test-parse-random/short-decimals.rs"
+
+[[bin]]
+name = "subnorm"
+path = "test-parse-random/subnorm.rs"
+
+[[bin]]
+name = "tiny-pow10"
+path = "test-parse-random/tiny-pow10.rs"
+
+[[bin]]
+name = "u32-small"
+path = "test-parse-random/u32-small.rs"
+
+[[bin]]
+name = "u64-pow2"
+path = "test-parse-random/u64-pow2.rs"
+
+[[bin]]
+name = "test-parse-golang"
+path = "test-parse-golang/main.rs"
+
+[[bin]]
+name = "test-parse-unittests"
+path = "test-parse-unittests/main.rs"
+
+# RNG TESTS
+
+[[bin]]
+name = "smoke-test"
+path = "rng-tests/smoke.rs"
+
+[[bin]]
+name = "f32-test"
+path = "rng-tests/f32.rs"

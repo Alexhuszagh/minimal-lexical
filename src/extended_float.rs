@@ -157,7 +157,10 @@ where
         // Adjust this exponent to the fact the value is normalized (1<<63).
         let exp = -63 + (217706 * exponent as i64 >> 16);
         let mant = POWERS_OF_10[(exponent - MIN_DENORMAL_EXP10) as usize].0;
-        let large = ExtendedFloat { mant, exp: exp as i32 };
+        let large = ExtendedFloat {
+            mant,
+            exp: exp as i32,
+        };
 
         // Normalize fp and multiple by large.
         fp.normalize();
