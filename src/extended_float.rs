@@ -6,10 +6,10 @@
 //! found here:
 //!     https://golang.org/src/strconv/atof.go
 
-use super::float::*;
-use super::num::*;
-use super::powers::*;
-use super::rounding::*;
+use crate::float::*;
+use crate::num::*;
+use crate::powers::*;
+use crate::rounding::*;
 
 // ERRORS
 // ------

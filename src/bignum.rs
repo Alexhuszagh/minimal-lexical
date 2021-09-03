@@ -1,6 +1,6 @@
 //! Big integer type definition.
 
-use super::math::*;
+use crate::math::*;
 
 /// Storage for a big integer type.
 #[derive(Clone, PartialEq, Eq)]

@@ -2,9 +2,9 @@
 
 #![doc(hidden)]
 
-use super::num::*;
-use super::rounding::*;
-use super::shift::*;
+use crate::num::*;
+use crate::rounding::*;
+use crate::shift::*;
 
 /// Extended precision floating-point type.
 ///

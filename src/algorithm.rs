@@ -1,9 +1,9 @@
 //! Algorithms to efficiently convert strings to floats.
 
-use super::bhcomp::*;
-use super::lemire::*;
-use super::num::*;
-use super::small_powers::*;
+use crate::bhcomp::*;
+use crate::lemire::*;
+use crate::num::*;
+use crate::small_powers::*;
 
 // FAST
 // ----

@@ -1,9 +1,9 @@
 //! Parse byte iterators to float.
 
-use super::algorithm::*;
-use super::digit::*;
-use super::exponent::*;
-use super::num::*;
+use crate::algorithm::*;
+use crate::digit::*;
+use crate::exponent::*;
+use crate::num::*;
 
 // PARSERS
 // -------

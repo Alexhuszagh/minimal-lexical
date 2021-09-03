@@ -35,9 +35,9 @@
 //! of `14267572528`. Note that due to the storage requirements,
 //! 128-bit floats do not currently use this algorithm.
 
-use super::extended_float;
-use super::num::*;
-use super::powers::*;
+use crate::extended_float;
+use crate::num::*;
+use crate::powers::*;
 
 // MUL
 // ---
