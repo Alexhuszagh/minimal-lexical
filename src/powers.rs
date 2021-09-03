@@ -21,9 +21,11 @@
 // Using a more narrow range means a smaller lookup table, and saves us
 // ~1KB in our binary.
 
-pub(super) const MIN_DENORMAL_EXP10: i32 = -342;
-pub(super) const MAX_NORMAL_EXP10: i32 = 308;
-pub(super) const POWERS_OF_10: [(u64, u64); 651] = [
+#![doc(hidden)]
+
+pub const MIN_DENORMAL_EXP10: i32 = -342;
+pub const MAX_NORMAL_EXP10: i32 = 308;
+pub const POWERS_OF_10: [(u64, u64); 651] = [
     (0xEEF453D6923BD65A, 0x113FAA2906A13B3F), // 10^-342
     (0x9558B4661B6565F8, 0x4AC7CA59A424C507), // 10^-341
     (0xBAAEE17FA23EBF76, 0x5D79BCF00D2DF649), // 10^-340

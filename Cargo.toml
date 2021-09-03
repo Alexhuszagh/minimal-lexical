@@ -34,15 +34,7 @@ compact = []
 # TODO(ahuszagh) Need to remove this dependency...
 # Change to alloc, since it's additive.
 no_alloc = ["arrayvec"]
-examples = []
 
 # Internal only features.
 # Enable the lint checks.
 lint = []
-
-# EXAMPLES
-
-[[bin]]
-name = "simple-example"
-path = "examples/simple.rs"
-required-features = ["examples"]

@@ -6,6 +6,8 @@
 //! found here:
 //!     https://golang.org/src/strconv/atof.go
 
+#![doc(hidden)]
+
 use crate::float::*;
 use crate::num::*;
 use crate::powers::*;
@@ -155,7 +157,7 @@ where
 
         // Infer the binary exponent from the power of 10.
         // Adjust this exponent to the fact the value is normalized (1<<63).
-        let exp = -63 + (217706 * exponent as i64 >> 16);
+        let exp = -63 + ((217706 * exponent as i64) >> 16);
         let mant = POWERS_OF_10[(exponent - MIN_DENORMAL_EXP10) as usize].0;
         let large = ExtendedFloat {
             mant,
@@ -174,7 +176,7 @@ where
         let shift = fp.normalize();
         errors <<= shift;
 
-        error_is_accurate::<F>(errors, &fp)
+        error_is_accurate::<F>(errors, fp)
     }
 }
 
@@ -183,7 +185,7 @@ where
 /// Return the float approximation and if the value can be accurately
 /// represented with mantissa bits of precision.
 #[inline]
-pub(super) fn moderate_path<F>(mantissa: u64, exponent: i32, truncated: bool) -> (F, bool)
+pub fn moderate_path<F>(mantissa: u64, exponent: i32, truncated: bool) -> (F, bool)
 where
     F: Float,
 {
@@ -199,63 +201,5 @@ where
         // Need the slow-path algorithm.
         let float = fp.into_downward_float::<F>();
         (float, false)
-    }
-}
-
-// TESTS
-// -----
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn moderate_path_test() {
-        let (f, valid) = moderate_path::<f64>(1234567890, -1, false);
-        assert!(valid, "should be valid");
-        assert_eq!(f, 123456789.0);
-
-        let (f, valid) = moderate_path::<f64>(1234567891, -1, false);
-        assert!(valid, "should be valid");
-        assert_eq!(f, 123456789.1);
-
-        let (f, valid) = moderate_path::<f64>(12345678912, -2, false);
-        assert!(valid, "should be valid");
-        assert_eq!(f, 123456789.12);
-
-        let (f, valid) = moderate_path::<f64>(123456789123, -3, false);
-        assert!(valid, "should be valid");
-        assert_eq!(f, 123456789.123);
-
-        let (f, valid) = moderate_path::<f64>(1234567891234, -4, false);
-        assert!(valid, "should be valid");
-        assert_eq!(f, 123456789.1234);
-
-        let (f, valid) = moderate_path::<f64>(12345678912345, -5, false);
-        assert!(valid, "should be valid");
-        assert_eq!(f, 123456789.12345);
-
-        let (f, valid) = moderate_path::<f64>(123456789123456, -6, false);
-        assert!(valid, "should be valid");
-        assert_eq!(f, 123456789.123456);
-
-        let (f, valid) = moderate_path::<f64>(1234567891234567, -7, false);
-        assert!(valid, "should be valid");
-        assert_eq!(f, 123456789.1234567);
-
-        let (f, valid) = moderate_path::<f64>(12345678912345679, -8, false);
-        assert!(valid, "should be valid");
-        assert_eq!(f, 123456789.12345679);
-
-        let (f, valid) = moderate_path::<f64>(4628372940652459, -17, false);
-        assert!(valid, "should be valid");
-        assert_eq!(f, 0.04628372940652459);
-
-        let (f, valid) = moderate_path::<f64>(26383446160308229, -272, false);
-        assert!(valid, "should be valid");
-        assert_eq!(f, 2.6383446160308229e-256);
-
-        let (_, valid) = moderate_path::<f64>(26383446160308230, -272, false);
-        assert!(!valid, "should be invalid");
     }
 }

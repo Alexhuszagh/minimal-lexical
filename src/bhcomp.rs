@@ -3,6 +3,8 @@
 //! Compares the actual significant digits of the mantissa to the
 //! theoretical digits from `b+h`, scaled into the proper range.
 
+#![doc(hidden)]
+
 use crate::bignum::*;
 use crate::digit::*;
 use crate::exponent::*;
@@ -32,7 +34,7 @@ where
     let mut result = Bigint::default();
 
     // Iteratively process all the data in the mantissa.
-    while let Some(&digit) = iter.next() {
+    for &digit in &mut iter {
         // We've parsed the max digits using small values, add to bignum
         if counter == step {
             result.imul_small(small_powers[counter]);
@@ -77,13 +79,13 @@ where
 
 /// Calculate `b` from a a representation of `b` as a float.
 #[inline]
-pub(super) fn b_extended<F: Float>(f: F) -> ExtendedFloat {
+pub fn b_extended<F: Float>(f: F) -> ExtendedFloat {
     ExtendedFloat::from_float(f)
 }
 
 /// Calculate `b+h` from a a representation of `b` as a float.
 #[inline]
-pub(super) fn bh_extended<F: Float>(f: F) -> ExtendedFloat {
+pub fn bh_extended<F: Float>(f: F) -> ExtendedFloat {
     // None of these can overflow.
     let b = b_extended(f);
     ExtendedFloat {
@@ -136,6 +138,7 @@ where
 /// Calculate the mantissa for a big integer with a negative exponent.
 ///
 /// This invokes the comparison with `b+h`.
+#[allow(clippy::comparison_chain)]
 fn small_atof<'a, F, Iter>(iter: Iter, exponent: i32, f: F) -> F
 where
     F: Float,
@@ -198,7 +201,7 @@ where
 ///     The digits iterator must not have any trailing zeros (true for
 ///     `FloatState2`).
 ///     sci_exponent and digits.size_hint() must not overflow i32.
-pub(crate) fn bhcomp<'a, F, Iter1, Iter2>(b: F, integer: Iter1, fraction: Iter2, exponent: i32) -> F
+pub fn bhcomp<'a, F, Iter1, Iter2>(b: F, integer: Iter1, fraction: Iter2, exponent: i32) -> F
 where
     F: Float,
     Iter1: Iterator<Item = &'a u8> + Clone,

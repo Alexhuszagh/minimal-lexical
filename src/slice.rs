@@ -1,5 +1,7 @@
 //! Traits to accept generic slices.
 
+#![doc(hidden)]
+
 #[cfg(all(not(feature = "no_alloc"), not(feature = "std")))]
 use alloc::vec::Vec;
 use core::ops;
@@ -20,9 +22,13 @@ pub trait RSliceIndex<T: ?Sized> {
     fn rget_mut(self, slc: &mut T) -> Option<&mut Self::Output>;
 
     /// Get reference to element or subslice without bounds checking.
+    /// # Safety
+    // TODO(ahuszagh) Remove...
     unsafe fn rget_unchecked(self, slc: &T) -> &Self::Output;
 
     /// Get mutable reference to element or subslice without bounds checking.
+    /// # Safety
+    // TODO(ahuszagh) Remove...
     unsafe fn rget_unchecked_mut(self, slc: &mut T) -> &mut Self::Output;
 
     /// Get reference to element or subslice, panic if out-of-bounds.
@@ -103,6 +109,12 @@ pub trait Slice<T> {
         <[T]>::len(self.as_slice())
     }
 
+    /// Get if the slice is empty.
+    #[inline]
+    fn is_empty(&self) -> bool {
+        self.as_slice().is_empty()
+    }
+
     // RINDEX
 
     /// Get reference to element or subslice.
@@ -112,7 +124,7 @@ pub trait Slice<T> {
 
     /// Create a reverse view of the vector for indexing.
     #[inline]
-    fn rview<'a>(&'a self) -> ReverseView<'a, T> {
+    fn rview(&self) -> ReverseView<T> {
         ReverseView {
             inner: self.as_slice(),
         }

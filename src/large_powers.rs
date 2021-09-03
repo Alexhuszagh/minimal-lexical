@@ -1,7 +1,9 @@
 //! Precalculated large powers for limbs.
 
+#![doc(hidden)]
+
 #[cfg(limb_width_32)]
-pub(crate) use super::large_powers32::*;
+pub use crate::large_powers32::*;
 
 #[cfg(limb_width_64)]
-pub(crate) use super::large_powers64::*;
+pub use crate::large_powers64::*;

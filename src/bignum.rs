@@ -1,12 +1,14 @@
 //! Big integer type definition.
 
+#![doc(hidden)]
+
 use crate::math::*;
 
 /// Storage for a big integer type.
 #[derive(Clone, PartialEq, Eq)]
-pub(crate) struct Bigint {
+pub struct Bigint {
     /// Internal storage for the Bigint, in little-endian order.
-    pub(crate) data: LimbVecType,
+    pub data: LimbVecType,
 }
 
 impl Default for Bigint {
@@ -22,12 +24,12 @@ impl Default for Bigint {
 
 impl Math for Bigint {
     #[inline(always)]
-    fn data<'a>(&'a self) -> &'a LimbVecType {
+    fn data(&self) -> &LimbVecType {
         &self.data
     }
 
     #[inline(always)]
-    fn data_mut<'a>(&'a mut self) -> &'a mut LimbVecType {
+    fn data_mut(&mut self) -> &mut LimbVecType {
         &mut self.data
     }
 }

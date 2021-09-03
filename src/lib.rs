@@ -44,29 +44,29 @@
 extern crate alloc;
 
 // MODULES
-mod algorithm;
-mod bhcomp;
-mod bignum;
-mod digit;
-mod exponent;
-mod extended_float;
-mod float;
-mod large_powers;
-mod lemire;
-mod math;
-mod num;
-mod parse;
-mod powers;
-mod rounding;
-mod shift;
-mod slice;
-mod small_powers;
+pub mod algorithm;
+pub mod bhcomp;
+pub mod bignum;
+pub mod digit;
+pub mod exponent;
+pub mod extended_float;
+pub mod float;
+pub mod large_powers;
+pub mod lemire;
+pub mod math;
+pub mod num;
+pub mod parse;
+pub mod powers;
+pub mod rounding;
+pub mod shift;
+pub mod slice;
+pub mod small_powers;
 
 #[cfg(limb_width_32)]
-mod large_powers32;
+pub mod large_powers32;
 
 #[cfg(limb_width_64)]
-mod large_powers64;
+pub mod large_powers64;
 
 // API
 pub use self::num::Float;

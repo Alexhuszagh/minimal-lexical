@@ -1,5 +1,7 @@
 //! Algorithms to efficiently convert strings to floats.
 
+#![doc(hidden)]
+
 use crate::bhcomp::*;
 use crate::lemire::*;
 use crate::num::*;
@@ -11,7 +13,7 @@ use crate::small_powers::*;
 /// Convert mantissa to exact value for a non-base2 power.
 ///
 /// Returns the resulting float and if the value can be represented exactly.
-pub(crate) fn fast_path<F>(mantissa: u64, exponent: i32) -> Option<F>
+pub fn fast_path<F>(mantissa: u64, exponent: i32) -> Option<F>
 where
     F: Float,
 {
@@ -68,7 +70,7 @@ where
 ///
 /// Uses the moderate path, if applicable, otherwise, uses the slow path
 /// as required.
-pub(crate) fn fallback_path<'a, F, Iter1, Iter2>(
+pub fn fallback_path<'a, F, Iter1, Iter2>(
     integer: Iter1,
     fraction: Iter2,
     mantissa: u64,
@@ -84,86 +86,9 @@ where
     // Moderate path (use an extended 80-bit representation).
     let (float, valid) = moderate_path::<F>(mantissa, mantissa_exponent, truncated);
     if valid || float.is_special() {
-        return float;
-    }
-
-    // Slow path, fast path didn't work.
-    return bhcomp(float, integer, fraction, exponent);
-}
-
-// TESTS
-// -----
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn float_fast_path_test() {
-        // valid
-        let mantissa = (1 << f32::MANTISSA_SIZE) - 1;
-        let (min_exp, max_exp) = f32::exponent_limit();
-        for exp in min_exp..max_exp + 1 {
-            let f = fast_path::<f32>(mantissa, exp);
-            assert!(f.is_some(), "should be valid {:?}.", (mantissa, exp));
-        }
-
-        // Check slightly above valid exponents
-        let f = fast_path::<f32>(123, 15);
-        assert_eq!(f, Some(1.23e+17));
-
-        // Exponent is 1 too high, pushes over the mantissa.
-        let f = fast_path::<f32>(123, 16);
-        assert!(f.is_none());
-
-        // Mantissa is too large, checked_mul should overflow.
-        let f = fast_path::<f32>(mantissa, 11);
-        assert!(f.is_none());
-
-        // invalid mantissa
-        #[cfg(feature = "radix")]
-        {
-            let (_, max_exp) = f64::exponent_limit(3);
-            let f = fast_path::<f32>(1 << f32::MANTISSA_SIZE, 3, max_exp + 1);
-            assert!(f.is_none(), "invalid mantissa");
-        }
-
-        // invalid exponents
-        let (min_exp, max_exp) = f32::exponent_limit();
-        let f = fast_path::<f32>(mantissa, min_exp - 1);
-        assert!(f.is_none(), "exponent under min_exp");
-
-        let f = fast_path::<f32>(mantissa, max_exp + 1);
-        assert!(f.is_none(), "exponent above max_exp");
-    }
-
-    #[test]
-    fn double_fast_path_test() {
-        // valid
-        let mantissa = (1 << f64::MANTISSA_SIZE) - 1;
-        let (min_exp, max_exp) = f64::exponent_limit();
-        for exp in min_exp..max_exp + 1 {
-            let f = fast_path::<f64>(mantissa, exp);
-            assert!(f.is_some(), "should be valid {:?}.", (mantissa, exp));
-        }
-
-        // invalid mantissa
-        #[cfg(feature = "radix")]
-        {
-            let (_, max_exp) = f64::exponent_limit(3);
-            let f = fast_path::<f64>(1 << f64::MANTISSA_SIZE, 3, max_exp + 1);
-            assert!(f.is_none(), "invalid mantissa");
-        }
-
-        // invalid exponents
-        let (min_exp, max_exp) = f64::exponent_limit();
-        let f = fast_path::<f64>(mantissa, min_exp - 1);
-        assert!(f.is_none(), "exponent under min_exp");
-
-        let f = fast_path::<f64>(mantissa, max_exp + 1);
-        assert!(f.is_none(), "exponent above max_exp");
-
-        assert_eq!(Some(0.04628372940652459), fast_path::<f64>(4628372940652459, -17));
-        assert_eq!(None, fast_path::<f64>(26383446160308229, -272));
+        float
+    } else {
+        // Slow path, fast path didn't work.
+        bhcomp(float, integer, fraction, exponent)
     }
 }

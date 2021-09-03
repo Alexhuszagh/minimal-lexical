@@ -1,5 +1,7 @@
 //! Pre-computed small powers.
 
+#![doc(hidden)]
+
 // 32 BIT
 #[cfg(limb_width_32)]
 pub(crate) const POW5_32: [u32; 14] = [

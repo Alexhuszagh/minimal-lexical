@@ -1,5 +1,7 @@
 //! Bit-shift helpers.
 
+#![doc(hidden)]
+
 use crate::float::ExtendedFloat;
 use core::mem;
 

@@ -1,5 +1,7 @@
 //! Precalculated large powers for 32-bit limbs.
 
+#![doc(hidden)]
+
 /// Large powers (&[u32]) for base5 operations.
 const POW5_1: [u32; 1] = [5];
 const POW5_2: [u32; 1] = [25];
@@ -175,7 +177,8 @@ const POW5_14: [u32; 595] = [
     3360064287, 3899940843, 9640,
 ];
 
-pub(crate) const POW5: [&'static [u32]; 14] = [
+#[allow(clippy::redundant_static_lifetimes)]
+pub const POW5: [&'static [u32]; 14] = [
     &POW5_1, &POW5_2, &POW5_3, &POW5_4, &POW5_5, &POW5_6, &POW5_7, &POW5_8, &POW5_9, &POW5_10,
     &POW5_11, &POW5_12, &POW5_13, &POW5_14,
 ];
