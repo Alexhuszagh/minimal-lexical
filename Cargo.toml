@@ -14,6 +14,7 @@ repository = "https://github.com/Alexhuszagh/minimal-lexical"
 version = "0.1.2"
 exclude = [
     "ci/*",
+    "docs/*",
     "etc/*",
     "examples/*",
     "scripts/*"
