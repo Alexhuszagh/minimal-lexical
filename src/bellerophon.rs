@@ -318,7 +318,7 @@ pub fn mul(x: &ExtendedFloat, y: &ExtendedFloat) -> ExtendedFloat {
 
     // Extract high-and-low masks.
     // Mask is u32::MAX for older Rustc versions.
-    const LOMASK: u64 = 0xffff_ffff as u64;
+    const LOMASK: u64 = 0xffff_ffff;
     let x1 = x.mant >> 32;
     let x0 = x.mant & LOMASK;
     let y1 = y.mant >> 32;
