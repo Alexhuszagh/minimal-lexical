@@ -11,16 +11,60 @@ use crate::num::Float;
 use crate::number::Number;
 use crate::slow::slow;
 
+/// Try to parse the significant digits quickly.
+///
+/// This attempts a very quick parse, to deal with common cases.
+///
+/// * `integer`     - Slice containing the integer digits.
+/// * `fraction`    - Slice containing the fraction digits.
+#[inline]
+fn parse_number_fast<'a, Iter1, Iter2>(
+    integer: Iter1,
+    fraction: Iter2,
+    exponent: i32,
+) -> Option<Number>
+where
+    Iter1: Iterator<Item = &'a u8>,
+    Iter2: Iterator<Item = &'a u8>,
+{
+    let mut num = Number::default();
+    let mut integer_count: usize = 0;
+    let mut fraction_count: usize = 0;
+    for &c in integer {
+        integer_count += 1;
+        let digit = c - b'0';
+        num.mantissa = num.mantissa.wrapping_mul(10).wrapping_add(digit as u64);
+    }
+    for &c in fraction {
+        fraction_count += 1;
+        let digit = c - b'0';
+        num.mantissa = num.mantissa.wrapping_mul(10).wrapping_add(digit as u64);
+    }
+
+    if integer_count + fraction_count <= 19 {
+        // Can't overflow, since must be <= 19.
+        num.exponent = exponent.saturating_sub(fraction_count as i32);
+        Some(num)
+    } else {
+        None
+    }
+}
+
 /// Parse the significant digits of the float and adjust the exponent.
 ///
 /// * `integer`     - Slice containing the integer digits.
 /// * `fraction`    - Slice containing the fraction digits.
 #[inline]
-fn parse_mantissa<'a, Iter1, Iter2>(mut integer: Iter1, mut fraction: Iter2, exponent: i32) -> Number
+fn parse_number<'a, Iter1, Iter2>(mut integer: Iter1, mut fraction: Iter2, exponent: i32) -> Number
 where
-    Iter1: Iterator<Item = &'a u8>,
-    Iter2: Iterator<Item = &'a u8>,
+    Iter1: Iterator<Item = &'a u8> + Clone,
+    Iter2: Iterator<Item = &'a u8> + Clone,
 {
+    // NOTE: for performance, we do this in 2 passes:
+    if let Some(num) = parse_number_fast(integer.clone(), fraction.clone(), exponent) {
+        return num;
+    }
+
     // Can only add 19 digits.
     let mut num = Number::default();
     let mut count = 0;
@@ -93,7 +137,7 @@ where
     Iter2: Iterator<Item = &'a u8> + Clone,
 {
     // Parse the mantissa and attempt the fast and moderate-path algorithms.
-    let num = parse_mantissa(integer.clone(), fraction.clone(), exponent);
+    let num = parse_number(integer.clone(), fraction.clone(), exponent);
     // Try the fast-path algorithm.
     if let Some(value) = num.try_fast_path() {
         return value;

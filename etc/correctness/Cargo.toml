@@ -19,6 +19,13 @@ serde = "1.0"
 serde_derive = "1.0"
 toml = "0.5"
 
+[features]
+default = ["std"]
+std = ["minimal-lexical/std"]
+compact = ["minimal-lexical/compact"]
+no_alloc = ["minimal-lexical/no_alloc"]
+nightly = ["minimal-lexical/nightly"]
+
 # Special testing binaries for the runtests.py scripts.
 [[bin]]
 name = "few_ones"
