@@ -84,7 +84,8 @@ pub trait Float:
     const CARRY_MASK: u64;
 
     /// Bias for marking an invalid extended float.
-    const INVALID_FP: i32 = i16::MIN as i32;
+    // Value is `i16::MIN`, using hard-coded constants for older Rustc versions.
+    const INVALID_FP: i32 = -0x8000;
 
     // Maximum mantissa for the fast-path (`1 << 53` for f64).
     const MAX_MANTISSA_FAST_PATH: u64 = 2_u64 << Self::MANTISSA_SIZE;
@@ -163,7 +164,7 @@ pub trait Float:
         };
 
         #[cfg(feature = "compact")]
-        return (radix as u64).wrapping_pow(exponent as u32);
+        return (radix as u64).pow(exponent as u32);
     }
 
     /// Returns true if the float is a denormal.
@@ -270,7 +271,8 @@ impl Float for f32 {
 
     #[inline]
     fn from_bits(u: u64) -> f32 {
-        debug_assert!(u <= u32::MAX as u64);
+        // Constant is `u32::MAX` for older Rustc versions.
+        debug_assert!(u <= 0xffff_ffff);
         f32::from_bits(u as u32)
     }
 

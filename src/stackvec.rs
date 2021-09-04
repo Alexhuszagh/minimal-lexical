@@ -45,7 +45,8 @@ impl StackVec {
     /// Safe as long as `len` is less than `BIGINT_LIMBS`.
     #[inline]
     pub unsafe fn set_len(&mut self, len: usize) {
-        debug_assert!(len <= u16::MAX as usize);
+        // Constant is `u16::MAX` for older Rustc versions.
+        debug_assert!(len <= 0xffff);
         debug_assert!(len <= bigint::BIGINT_LIMBS);
         self.length = len as u16;
     }

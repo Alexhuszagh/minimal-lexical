@@ -90,7 +90,7 @@ minimal-lexical should also work on a wide variety of other architectures and IS
 
 # Minimum Version Support
 
-Minimal-lexical is tested to support Rustc 1.31+, including stable, beta, and nightly. Please report any errors compiling a supported lexical version on a compatible Rustc version.
+Minimal-lexical is tested to support Rustc 1.36+, including stable, beta, and nightly. Please report any errors compiling a supported lexical version on a compatible Rustc version. Please note we may increment the MSRV for compiler versions older than 18 months, to support at least the current Debian stable version, without breaking changes.
 
 # Changelog
 

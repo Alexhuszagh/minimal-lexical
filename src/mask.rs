@@ -17,7 +17,8 @@ pub fn lower_n_mask(n: u64) -> u64 {
     debug_assert!(n <= 64, "lower_n_mask() overflow in shl.");
 
     match n == 64 {
-        true => u64::MAX,
+        // u64::MAX for older Rustc versions.
+        true => 0xffff_ffff_ffff_ffff,
         false => (1 << n) - 1,
     }
 }

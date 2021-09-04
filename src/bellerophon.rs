@@ -317,7 +317,8 @@ pub fn mul(x: &ExtendedFloat, y: &ExtendedFloat) -> ExtendedFloat {
     debug_assert!(y.mant >> 32 != 0);
 
     // Extract high-and-low masks.
-    const LOMASK: u64 = u32::MAX as u64;
+    // Mask is u32::MAX for older Rustc versions.
+    const LOMASK: u64 = 0xffff_ffff as u64;
     let x1 = x.mant >> 32;
     let x0 = x.mant & LOMASK;
     let y1 = y.mant >> 32;
@@ -363,7 +364,7 @@ pub struct BellerophonPowers {
 /// Allow indexing of values without bounds checking
 impl BellerophonPowers {
     #[inline]
-    pub const fn get_small(&self, index: usize) -> ExtendedFloat {
+    pub fn get_small(&self, index: usize) -> ExtendedFloat {
         let mant = self.small[index];
         let exp = (1 - 64) + ((self.log2 * index as i64) >> self.log2_shift);
         ExtendedFloat {
@@ -373,7 +374,7 @@ impl BellerophonPowers {
     }
 
     #[inline]
-    pub const fn get_large(&self, index: usize) -> ExtendedFloat {
+    pub fn get_large(&self, index: usize) -> ExtendedFloat {
         let mant = self.large[index];
         let biased_e = index as i64 * self.step as i64 - self.bias as i64;
         let exp = (1 - 64) + ((self.log2 * biased_e) >> self.log2_shift);
@@ -384,7 +385,7 @@ impl BellerophonPowers {
     }
 
     #[inline]
-    pub const fn get_small_int(&self, index: usize) -> u64 {
+    pub fn get_small_int(&self, index: usize) -> u64 {
         self.small_int[index]
     }
 }
