@@ -1,9 +1,6 @@
 minimal-lexical
 ===============
 
-[![Build Status](https://api.travis-ci.org/Alexhuszagh/minimal-lexical.svg?branch=master)](https://travis-ci.org/Alexhuszagh/minimal-lexical)
-[![Rustc Version 1.31+](https://img.shields.io/badge/rustc-1.31+-lightgray.svg)](https://blog.rust-lang.org/2018/12/06/Rust-1.31-and-rust-2018.html)
-
 This is a minimal version of [rust-lexical](https://github.com/Alexhuszagh/rust-lexical), meant to allow efficient round-trip float parsing. minimal-lexical implements a correct, fast float parser.
 
 Due to the small, stable nature of minimal-lexical, it is also well-adapted to private forks. If you do privately fork minimal-lexical, I recommend you contact me via [email](mailto:ahuszagh@gmail.com) or [Twitter](https://twitter.com/KardOnIce), so I can notify you of feature updates, bug fixes, or security vulnerabilities, as well as help you implement custom feature requests. I will not use your information for any other purpose, including, but not limited to disclosing your project or organization's use of minimal-lexical.
@@ -12,7 +9,7 @@ minimal-lexical is designed for fast compile times and small binaries sizes, at 
 
 **Similar Projects**
 
-For a high-level, all-in-one number conversion routines, see [rust-lexical](https://github.com/Alexhuszagh/rust-lexical). For language bindings to lexical, see [lexical-capi](https://github.com/Alexhuszagh/rust-lexical/tree/master/lexical-capi).
+For a high-level, all-in-one number conversion routines, see [rust-lexical](https://github.com/Alexhuszagh/rust-lexical).
 
 **Table Of Contents**
 
