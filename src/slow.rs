@@ -315,6 +315,17 @@ where
         }
     }
 
+    // Skip leading fraction zeros.
+    // Required to get an accurate count.
+    if count == 0 {
+        for &c in &mut fraction {
+            if c != b'0' {
+                add_digit!(c, value, counter, count);
+                break;
+            }
+        }
+    }
+
     // Process the fraction digits.
     'fraction: loop {
         // Parse a digit at a time, until we reach step.

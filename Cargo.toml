@@ -19,20 +19,14 @@ exclude = [
     "scripts/*"
 ]
 
-[dependencies]
-# Arrayvec is only used if we require stack-allocation.
-# TODO(ahuszagh) Need to remove this dependency...
-arrayvec = { version = "0.4", optional = true, default-features = false, features = ["array-sizes-33-128"] }
-
 [features]
 default = ["std"]
 # Use the standard library.
 std = []
 # Reduce code size at the cost of performance.
 compact = []
-# TODO(ahuszagh) Need to remove this dependency...
-# Change to alloc, since it's additive.
-no_alloc = ["arrayvec"]
+# Do not use a system allocator anywhere.
+no_alloc = []
 # Add support for nightly-only features.
 nightly = []
 
