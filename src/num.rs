@@ -10,7 +10,11 @@ use crate::table::{SMALL_F32_POW10, SMALL_F64_POW10, SMALL_INT_POW10, SMALL_INT_
 use core::hint;
 use core::ops;
 
-/// Get exact exponent limit for radix.
+/// Generic floating-point type, to be used in generic code for parsing.
+///
+/// Although the trait is part of the public API, the trait provides methods
+/// and constants that are effectively non-public: they may be removed
+/// at any time without any breaking changes.
 pub trait Float:
     Sized
     + Copy

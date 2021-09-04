@@ -127,6 +127,19 @@ where
 /// # Preconditions
 /// 1. The integer should not have leading zeros.
 /// 2. The fraction should not have trailing zeros.
+/// 3. All bytes in `integer` and `fraction` should be valid digits,
+///     in the range [`b'0', b'9'].
+///
+/// # Panics
+///
+/// Although passing garbage input will not cause memory safety issues,
+/// it is very likely to cause a panic with a large number of digits, or
+/// in debug mode. The big-integer arithmetic with the `no_alloc` feature
+/// assumes a maximum, fixed-width input, which assumes at maximum a
+/// value of `10^(769 + 342)`, or ~4000 bits of storage. Passing in
+/// nonsensical digits may require up to ~6000 bits of storage, which will
+/// panic when attempting to add it to the big integer. It is therefore
+/// up to the caller to validate this input.
 ///
 /// We cannot efficiently remove trailing zeros while only accepting a
 /// forward iterator.
