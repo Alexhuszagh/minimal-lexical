@@ -58,7 +58,7 @@ pub struct Bigint {
 
 #[allow(clippy::new_without_default)]
 impl Bigint {
-    /// Construct a bigfloat representing 0.
+    /// Construct a bigint representing 0.
     #[inline(always)]
     pub fn new() -> Self {
         Self {
@@ -66,15 +66,7 @@ impl Bigint {
         }
     }
 
-    /// Construct a bigfloat from an integer.
-    #[inline(always)]
-    pub fn from_u32(value: u32) -> Self {
-        Self {
-            data: VecType::from_u32(value),
-        }
-    }
-
-    /// Construct a bigfloat from an integer.
+    /// Construct a bigint from an integer.
     #[inline(always)]
     pub fn from_u64(value: u64) -> Self {
         Self {
@@ -118,29 +110,6 @@ impl ops::MulAssign<&Bigint> for Bigint {
 /// Reverse, immutable view of a sequence.
 pub struct ReverseView<'a, T: 'a> {
     inner: &'a [T],
-}
-
-impl<'a, T: 'a> ReverseView<'a, T> {
-    /// Get a reference to a value, without bounds checking.
-    ///
-    /// # Safety
-    ///
-    /// Safe if forward indexing would be safe for the type,
-    /// or `index < self.inner.len()`.
-    #[inline(always)]
-    pub unsafe fn get_unchecked(&self, index: usize) -> &T {
-        debug_assert!(index < self.inner.len());
-        let len = self.inner.len();
-        unsafe { self.inner.get_unchecked(len - index - 1) }
-    }
-
-    /// Get a reference to a value.
-    #[inline(always)]
-    pub fn get(&self, index: usize) -> Option<&T> {
-        let len = self.inner.len();
-        // We don't care if this wraps: the index is bounds-checked.
-        self.inner.get(len.wrapping_sub(index + 1))
-    }
 }
 
 impl<'a, T> ops::Index<usize> for ReverseView<'a, T> {
@@ -213,26 +182,6 @@ pub fn is_normalized(x: &[Limb]) -> bool {
 // FROM
 // ----
 
-/// Create StackVec from u16 value.
-#[inline(always)]
-pub fn from_u16(x: u16) -> VecType {
-    let mut vec = VecType::new();
-    debug_assert!(vec.capacity() >= 1);
-    vec.try_push(x as Limb).unwrap();
-    vec.normalize();
-    vec
-}
-
-/// Create StackVec from u32 value.
-#[inline(always)]
-pub fn from_u32(x: u32) -> VecType {
-    let mut vec = VecType::new();
-    debug_assert!(vec.capacity() >= 1);
-    vec.try_push(x as Limb).unwrap();
-    vec.normalize();
-    vec
-}
-
 /// Create StackVec from u64 value.
 #[inline(always)]
 #[allow(clippy::branches_sharing_code)]
@@ -268,40 +217,6 @@ pub fn nonzero(x: &[Limb], rindex: usize) -> bool {
 
 // These return the high X bits and if the bits were truncated.
 
-/// Shift 32-bit integer to high 16-bits.
-#[inline]
-pub fn u32_to_hi16_1(r0: u32) -> (u16, bool) {
-    let r0 = u32_to_hi32_1(r0).0;
-    ((r0 >> 16) as u16, r0 as u16 != 0)
-}
-
-/// Shift 2 32-bit integers to high 16-bits.
-#[inline]
-pub fn u32_to_hi16_2(r0: u32, r1: u32) -> (u16, bool) {
-    let (r0, n) = u32_to_hi32_2(r0, r1);
-    ((r0 >> 16) as u16, n || r0 as u16 != 0)
-}
-
-/// Shift 32-bit integer to high 32-bits.
-#[inline]
-pub fn u32_to_hi32_1(r0: u32) -> (u32, bool) {
-    let ls = r0.leading_zeros();
-    (r0 << ls, false)
-}
-
-/// Shift 2 32-bit integers to high 32-bits.
-#[inline]
-pub fn u32_to_hi32_2(r0: u32, r1: u32) -> (u32, bool) {
-    let ls = r0.leading_zeros();
-    let rs = 32 - ls;
-    let v = match ls {
-        0 => r0,
-        _ => (r0 << ls) | (r1 >> rs),
-    };
-    let n = r1 << ls != 0;
-    (v, n)
-}
-
 /// Shift 32-bit integer to high 64-bits.
 #[inline]
 pub fn u32_to_hi64_1(r0: u32) -> (u64, bool) {
@@ -323,34 +238,6 @@ pub fn u32_to_hi64_3(r0: u32, r1: u32, r2: u32) -> (u64, bool) {
     let r1 = (r1 as u64) << 32;
     let r2 = r2 as u64;
     u64_to_hi64_2(r0, r1 | r2)
-}
-
-/// Shift 64-bit integer to high 16-bits.
-#[inline]
-pub fn u64_to_hi16_1(r0: u64) -> (u16, bool) {
-    let r0 = u64_to_hi64_1(r0).0;
-    ((r0 >> 48) as u16, r0 as u16 != 0)
-}
-
-/// Shift 2 64-bit integers to high 16-bits.
-#[inline]
-pub fn u64_to_hi16_2(r0: u64, r1: u64) -> (u16, bool) {
-    let (r0, n) = u64_to_hi64_2(r0, r1);
-    ((r0 >> 48) as u16, n || r0 as u16 != 0)
-}
-
-/// Shift 64-bit integer to high 32-bits.
-#[inline]
-pub fn u64_to_hi32_1(r0: u64) -> (u32, bool) {
-    let r0 = u64_to_hi64_1(r0).0;
-    ((r0 >> 32) as u32, r0 as u32 != 0)
-}
-
-/// Shift 2 64-bit integers to high 32-bits.
-#[inline]
-pub fn u64_to_hi32_2(r0: u64, r1: u64) -> (u32, bool) {
-    let (r0, n) = u64_to_hi64_2(r0, r1);
-    ((r0 >> 32) as u32, n || r0 as u32 != 0)
 }
 
 /// Shift 64-bit integer to high 64-bits.
@@ -418,34 +305,6 @@ macro_rules! hi {
     }};
 }
 
-/// Get the high 16 bits from the vector.
-#[inline(always)]
-pub fn hi16(x: &[Limb]) -> (u16, bool) {
-    let rslc = rview(x);
-    // SAFETY: the buffer must be at least length bytes long.
-    match x.len() {
-        0 => (0, false),
-        1 if LIMB_BITS == 32 => hi!(@1 x, rslc, u32, u32_to_hi16_1),
-        1 => hi!(@1 x, rslc, u64, u64_to_hi16_1),
-        _ if LIMB_BITS == 32 => hi!(@nonzero2 x, rslc, u32, u32_to_hi16_2),
-        _ => hi!(@nonzero2 x, rslc, u64, u64_to_hi16_2),
-    }
-}
-
-/// Get the high 32 bits from the vector.
-#[inline(always)]
-pub fn hi32(x: &[Limb]) -> (u32, bool) {
-    let rslc = rview(x);
-    // SAFETY: the buffer must be at least length bytes long.
-    match x.len() {
-        0 => (0, false),
-        1 if LIMB_BITS == 32 => hi!(@1 x, rslc, u32, u32_to_hi32_1),
-        1 => hi!(@1 x, rslc, u64, u64_to_hi32_1),
-        _ if LIMB_BITS == 32 => hi!(@nonzero2 x, rslc, u32, u32_to_hi32_2),
-        _ => hi!(@nonzero2 x, rslc, u64, u64_to_hi32_2),
-    }
-}
-
 /// Get the high 64 bits from the vector.
 #[inline(always)]
 pub fn hi64(x: &[Limb]) -> (u64, bool) {
@@ -465,7 +324,7 @@ pub fn hi64(x: &[Limb]) -> (u64, bool) {
 // POWERS
 // ------
 
-/// MulAssign by a power.
+/// MulAssign by a power of 5.
 ///
 /// Theoretically...
 ///
@@ -919,15 +778,11 @@ pub type Limb = u64;
 #[cfg(all(target_pointer_width = "64", not(target_arch = "sparc")))]
 pub type Wide = u128;
 #[cfg(all(target_pointer_width = "64", not(target_arch = "sparc")))]
-pub type SignedWide = i128;
-#[cfg(all(target_pointer_width = "64", not(target_arch = "sparc")))]
 pub const LIMB_BITS: usize = 64;
 
 #[cfg(not(all(target_pointer_width = "64", not(target_arch = "sparc"))))]
 pub type Limb = u32;
 #[cfg(not(all(target_pointer_width = "64", not(target_arch = "sparc"))))]
 pub type Wide = u64;
-#[cfg(not(all(target_pointer_width = "64", not(target_arch = "sparc"))))]
-pub type SignedWide = i64;
 #[cfg(not(all(target_pointer_width = "64", not(target_arch = "sparc"))))]
 pub const LIMB_BITS: usize = 32;

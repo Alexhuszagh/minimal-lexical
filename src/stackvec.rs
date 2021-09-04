@@ -208,18 +208,6 @@ impl StackVec {
 
     // HI
 
-    /// Get the high 16 bits from the vector.
-    #[inline(always)]
-    pub fn hi16(&self) -> (u16, bool) {
-        bigint::hi16(self)
-    }
-
-    /// Get the high 32 bits from the vector.
-    #[inline(always)]
-    pub fn hi32(&self) -> (u32, bool) {
-        bigint::hi32(self)
-    }
-
     /// Get the high 64 bits from the vector.
     #[inline(always)]
     pub fn hi64(&self) -> (u64, bool) {
@@ -227,18 +215,6 @@ impl StackVec {
     }
 
     // FROM
-
-    /// Create StackVec from u16 value.
-    #[inline(always)]
-    pub fn from_u16(x: u16) -> Self {
-        bigint::from_u16(x)
-    }
-
-    /// Create StackVec from u32 value.
-    #[inline(always)]
-    pub fn from_u32(x: u32) -> Self {
-        bigint::from_u32(x)
-    }
 
     /// Create StackVec from u64 value.
     #[inline(always)]

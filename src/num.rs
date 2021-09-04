@@ -139,7 +139,6 @@ pub trait Float:
     // Re-exported methods from std.
     fn from_bits(u: u64) -> Self;
     fn to_bits(self) -> u64;
-    fn is_sign_positive(self) -> bool;
 
     /// Get a small power-of-radix for fast-path multiplication.
     ///
@@ -173,24 +172,6 @@ pub trait Float:
         self.to_bits() & Self::EXPONENT_MASK == 0
     }
 
-    /// Returns true if the float is a NaN or Infinite.
-    #[inline]
-    fn is_special(self) -> bool {
-        self.to_bits() & Self::EXPONENT_MASK == Self::EXPONENT_MASK
-    }
-
-    /// Returns true if the float is NaN.
-    #[inline]
-    fn is_nan(self) -> bool {
-        self.is_special() && (self.to_bits() & Self::MANTISSA_MASK) != 0
-    }
-
-    /// Returns true if the float is infinite.
-    #[inline]
-    fn is_inf(self) -> bool {
-        self.is_special() && (self.to_bits() & Self::MANTISSA_MASK) == 0
-    }
-
     /// Get exponent component from the float.
     #[inline]
     fn exponent(self) -> i32 {
@@ -212,24 +193,6 @@ pub trait Float:
             s + Self::HIDDEN_BIT_MASK
         } else {
             s
-        }
-    }
-
-    /// Get next greater float for a positive float.
-    /// Value must be >= 0.0 and < INFINITY.
-    #[inline]
-    fn next_positive(self) -> Self {
-        debug_assert!(self.is_sign_positive() && !self.is_inf());
-        Self::from_bits(self.to_bits() + 1)
-    }
-
-    /// Round a positive number to even.
-    #[inline]
-    fn round_positive_even(self) -> Self {
-        if self.mantissa() & 1 == 1 {
-            self.next_positive()
-        } else {
-            self
         }
     }
 }
@@ -280,11 +243,6 @@ impl Float for f32 {
     fn to_bits(self) -> u64 {
         f32::to_bits(self) as u64
     }
-
-    #[inline]
-    fn is_sign_positive(self) -> bool {
-        f32::is_sign_positive(self)
-    }
 }
 
 impl Float for f64 {
@@ -330,11 +288,6 @@ impl Float for f64 {
     #[inline]
     fn to_bits(self) -> u64 {
         f64::to_bits(self)
-    }
-
-    #[inline]
-    fn is_sign_positive(self) -> bool {
-        f64::is_sign_positive(self)
     }
 }
 

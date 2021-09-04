@@ -51,7 +51,8 @@ where
     }
 
     // No truncated digits: easy.
-    num.exponent = exponent.saturating_sub(into_i32(fraction_count));
+    // Cannot overflow: <= 20 digits.
+    num.exponent = exponent.saturating_sub(fraction_count as i32);
     num
 }
 

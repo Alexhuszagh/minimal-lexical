@@ -28,7 +28,7 @@
 macro_rules! i {
     ($array:ident, $index:expr) => {
         // SAFETY: safe if `index < array.len()`.
-        unsafe { index_unchecked!($array[$index]) }
+        unsafe { *$array.get_unchecked($index) }
     };
 }
 
