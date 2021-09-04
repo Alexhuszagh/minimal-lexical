@@ -140,19 +140,19 @@ where
     if case_insensitive_starts_with(bytes.iter(), b"NaN".iter()) {
         let mut float = F::from_bits(F::EXPONENT_MASK | (F::HIDDEN_BIT_MASK >> 1));
         if !is_positive {
-            float = - float;
+            float = -float;
         }
         return (float, &bytes[3..]);
     } else if case_insensitive_starts_with(bytes.iter(), b"Infinity".iter()) {
         let mut float = F::from_bits(F::EXPONENT_MASK);
         if !is_positive {
-            float = - float;
+            float = -float;
         }
         return (float, &bytes[8..]);
     } else if case_insensitive_starts_with(bytes.iter(), b"inf".iter()) {
         let mut float = F::from_bits(F::EXPONENT_MASK);
         if !is_positive {
-            float = - float;
+            float = -float;
         }
         return (float, &bytes[3..]);
     }
