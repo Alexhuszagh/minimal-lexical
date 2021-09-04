@@ -8,7 +8,7 @@ use minimal_lexical::Float;
 pub fn main() {
     let mut buffer = ryu::Buffer::new();
     for i in 0..=f32::EXPONENT_MASK {
-        let input = f32::from_bits(i);
+        let input = f32::from_bits(i as u32);
         if i % 100000 == 0 {
             println!("Processed {} records.", i);
         }

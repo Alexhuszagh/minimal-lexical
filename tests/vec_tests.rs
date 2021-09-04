@@ -4,6 +4,14 @@ use core::cmp;
 use minimal_lexical::bigint;
 use stackvec::{vec_from_u32, VecType};
 
+// u64::MAX and Limb::MAX for older Rustc versions.
+const U64_MAX: u64 = 0xffff_ffff_ffff_ffff;
+// LIMB_MAX
+#[cfg(all(target_pointer_width = "64", not(target_arch = "sparc")))]
+const LIMB_MAX: u64 = U64_MAX;
+#[cfg(not(all(target_pointer_width = "64", not(target_arch = "sparc"))))]
+const LIMB_MAX: u32 = 0xffff_ffff;
+
 #[test]
 fn simple_test() {
     // Test the simple properties of the stack vector.
@@ -41,7 +49,7 @@ fn simple_test() {
     assert_eq!(rview[1], 5);
     assert_eq!(x.len(), 2);
 
-    assert_eq!(VecType::from_u64(u64::MAX).hi64(), (u64::MAX, false));
+    assert_eq!(VecType::from_u64(U64_MAX).hi64(), (U64_MAX, false));
 }
 
 #[test]
@@ -93,12 +101,12 @@ fn math_test() {
 
     x.add_small(1);
     assert_eq!(&*x, &[1, 1, 9]);
-    x.add_small(bigint::Limb::MAX);
+    x.add_small(LIMB_MAX);
     assert_eq!(&*x, &[0, 2, 9]);
 
     x.mul_small(3);
     assert_eq!(&*x, &[0, 6, 27]);
-    x.mul_small(bigint::Limb::MAX);
+    x.mul_small(LIMB_MAX);
     let expected: VecType = if bigint::LIMB_BITS == 32 {
         vec_from_u32(&[0, 4294967290, 4294967274, 26])
     } else {
@@ -115,21 +123,21 @@ fn math_test() {
     // Test with carry
     let mut x = VecType::from_u64(1);
     assert_eq!(&*x, &[1]);
-    x.add_small(bigint::Limb::MAX);
+    x.add_small(LIMB_MAX);
     assert_eq!(&*x, &[0, 1]);
 }
 
 #[test]
 fn scalar_add_test() {
     assert_eq!(bigint::scalar_add(5, 5), (10, false));
-    assert_eq!(bigint::scalar_add(bigint::Limb::MAX, 1), (0, true));
+    assert_eq!(bigint::scalar_add(LIMB_MAX, 1), (0, true));
 }
 
 #[test]
 fn scalar_mul_test() {
     assert_eq!(bigint::scalar_mul(5, 5, 0), (25, 0));
     assert_eq!(bigint::scalar_mul(5, 5, 1), (26, 0));
-    assert_eq!(bigint::scalar_mul(bigint::Limb::MAX, 2, 0), (bigint::Limb::MAX - 1, 1));
+    assert_eq!(bigint::scalar_mul(LIMB_MAX, 2, 0), (LIMB_MAX - 1, 1));
 }
 
 #[test]
