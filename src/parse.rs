@@ -2,40 +2,57 @@
 
 #![doc(hidden)]
 
-use crate::algorithm::*;
-use crate::digit::*;
-use crate::exponent::*;
-use crate::num::*;
+#[cfg(feature = "compact")]
+use crate::bellerophon::bellerophon;
+use crate::extended_float::{extended_to_float, ExtendedFloat};
+#[cfg(not(feature = "compact"))]
+use crate::lemire::lemire;
+use crate::num::Float;
+use crate::number::Number;
+use crate::slow::slow;
 
-// PARSERS
-// -------
-
-/// Parse the significant digits of the float.
+/// Parse the significant digits of the float and adjust the exponent.
 ///
 /// * `integer`     - Slice containing the integer digits.
 /// * `fraction`    - Slice containing the fraction digits.
-fn parse_mantissa<'a, Iter1, Iter2>(mut integer: Iter1, mut fraction: Iter2) -> (u64, usize)
+#[inline]
+fn parse_mantissa<'a, Iter1, Iter2>(mut integer: Iter1, fraction: Iter2, exponent: i32) -> Number
 where
     Iter1: Iterator<Item = &'a u8>,
     Iter2: Iterator<Item = &'a u8>,
 {
-    let mut value: u64 = 0;
-    // On overflow, validate that all the remaining characters are valid
-    // digits, if not, return the first invalid digit. Otherwise,
-    // calculate the number of truncated digits.
-    while let Some(c) = integer.next() {
-        value = match add_digit(value, to_digit(*c).unwrap()) {
-            Some(v) => v,
-            None => return (value, 1 + integer.count() + fraction.count()),
+    let mut num = Number::default();
+    while let Some(&c) = integer.next() {
+        num.mantissa = match add_digit(num.mantissa, c - b'0') {
+            Some(mant) => mant,
+            None => {
+                // Only the integer digits affect the exponent.
+                num.many_digits = true;
+                num.exponent = exponent.saturating_add(into_i32(1 + integer.count()));
+                return num;
+            },
         };
     }
-    while let Some(c) = fraction.next() {
-        value = match add_digit(value, to_digit(*c).unwrap()) {
-            Some(v) => v,
-            None => return (value, 1 + fraction.count()),
+    let mut fraction_count: usize = 0;
+    for c in fraction {
+        fraction_count += 1;
+        num.mantissa = match add_digit(num.mantissa, c - b'0') {
+            Some(mant) => mant,
+            None => {
+                num.many_digits = true;
+                // This can't wrap, since we have at most 20 digits.
+                // We've adjusted the exponent too high by `fraction_count - 1`.
+                // Note: -1 is due to incrementing this loop iteration, which we
+                // didn't use.
+                num.exponent = exponent.saturating_sub(fraction_count as i32 - 1);
+                return num;
+            },
         };
     }
-    (value, 0)
+
+    // No truncated digits: easy.
+    num.exponent = exponent.saturating_sub(into_i32(fraction_count));
+    num
 }
 
 /// Parse float from extracted float components.
@@ -57,25 +74,52 @@ where
     Iter2: Iterator<Item = &'a u8> + Clone,
 {
     // Parse the mantissa and attempt the fast and moderate-path algorithms.
-    let (mantissa, truncated) = parse_mantissa(integer.clone(), fraction.clone());
-    let is_truncated = truncated != 0;
-
-    // Process the state to a float.
-    if mantissa == 0 {
-        // Literal 0, return early.
-        // Value cannot be truncated, since truncation only occurs on
-        // overflow or underflow.
-        F::ZERO
-    } else if !is_truncated {
-        // Try the fast path, no mantissa truncation.
-        let mant_exp = mantissa_exponent(exponent, fraction.clone().count(), 0);
-        if let Some(float) = fast_path::<F>(mantissa, mant_exp) {
-            float
-        } else {
-            fallback_path::<F, _, _>(integer, fraction, mantissa, exponent, mant_exp, is_truncated)
-        }
-    } else {
-        let mant_exp = mantissa_exponent(exponent, fraction.clone().count(), truncated);
-        fallback_path::<F, _, _>(integer, fraction, mantissa, exponent, mant_exp, is_truncated)
+    let num = parse_mantissa(integer.clone(), fraction.clone(), exponent);
+    // Try the fast-path algorithm.
+    if let Some(value) = num.try_fast_path() {
+        return value;
     }
+
+    // Now try the moderate path algorithm.
+    let mut fp = moderate_path::<F>(&num);
+    if fp.exp < 0 {
+        // Undo the invalid extended float biasing.
+        fp.exp -= F::INVALID_FP;
+        fp = slow::<F, _, _>(num, fp, integer, fraction);
+    }
+
+    // Unable to correctly round the float using the fast or moderate algorithms.
+    // Fallback to a slower, but always correct algorithm. If we have
+    // lossy, we can't be here.
+    extended_to_float::<F>(fp)
+}
+
+/// Wrapper for different moderate-path algorithms.
+/// A return exponent of `-1` indicates an invalid value.
+#[inline]
+pub fn moderate_path<F: Float>(num: &Number) -> ExtendedFloat {
+    #[cfg(not(feature = "compact"))]
+    return lemire::<F>(num);
+
+    #[cfg(feature = "compact")]
+    return bellerophon::<F>(num);
+}
+
+/// Convert usize into i32 without overflow.
+///
+/// This is needed to ensure when adjusting the exponent relative to
+/// the mantissa we do not overflow for comically-long exponents.
+#[inline]
+fn into_i32(value: usize) -> i32 {
+    if value > i32::max_value() as usize {
+        i32::max_value()
+    } else {
+        value as i32
+    }
+}
+
+// Add digit to mantissa.
+#[inline]
+pub fn add_digit(value: u64, digit: u8) -> Option<u64> {
+    value.checked_mul(10)?.checked_add(digit as u64)
 }

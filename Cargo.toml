@@ -33,6 +33,8 @@ compact = []
 # TODO(ahuszagh) Need to remove this dependency...
 # Change to alloc, since it's additive.
 no_alloc = ["arrayvec"]
+# Add support for nightly-only features.
+nightly = []
 
 # Internal only features.
 # Enable the lint checks.

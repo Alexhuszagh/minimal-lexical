@@ -2,229 +2,130 @@
 
 #![doc(hidden)]
 
-use crate::float::ExtendedFloat;
-use crate::num::*;
-use crate::shift::*;
-use core::mem;
+use crate::extended_float::ExtendedFloat;
+use crate::mask::{lower_n_halfway, lower_n_mask};
+use crate::num::Float;
 
-// MASKS
+// ROUNDING
+// --------
 
-/// Calculate a scalar factor of 2 above the halfway point.
-#[inline]
-pub fn nth_bit(n: u64) -> u64 {
-    let bits: u64 = mem::size_of::<u64>() as u64 * 8;
-    debug_assert!(n < bits, "nth_bit() overflow in shl.");
+/// Round an extended-precision float to the nearest machine float.
+///
+/// Shifts the significant digits into place, adjusts the exponent,
+/// so it can be easily converted to a native float.
+#[cfg_attr(not(feature = "compact"), inline)]
+pub fn round<F, Cb>(fp: &mut ExtendedFloat, cb: Cb)
+where
+    F: Float,
+    Cb: Fn(&mut ExtendedFloat, i32),
+{
+    let fp_inf = ExtendedFloat {
+        mant: 0,
+        exp: F::INFINITE_POWER,
+    };
 
-    1 << n
-}
+    // Calculate our shift in significant digits.
+    let mantissa_shift = 64 - F::MANTISSA_SIZE - 1;
 
-/// Generate a bitwise mask for the lower `n` bits.
-#[inline]
-pub fn lower_n_mask(n: u64) -> u64 {
-    let bits: u64 = mem::size_of::<u64>() as u64 * 8;
-    debug_assert!(n <= bits, "lower_n_mask() overflow in shl.");
-
-    match n == bits {
-        true => u64::max_value(),
-        false => (1 << n) - 1,
+    // Check for a denormal float, if after the shift the exponent is negative.
+    if -fp.exp >= mantissa_shift {
+        // Have a denormal float that isn't a literal 0.
+        // The extra 1 is to adjust for the denormal float, which is
+        // `1 - F::EXPONENT_BIAS`. This works as before, because our
+        // old logic rounded to `F::DENORMAL_EXPONENT` (now 1), and then
+        // checked if `exp == F::DENORMAL_EXPONENT` and no hidden mask
+        // bit was set. Here, we handle that here, rather than later.
+        //
+        // This might round-down to 0, but shift will be at **max** 65,
+        // for halfway cases rounding towards 0.
+        let shift = -fp.exp + 1;
+        debug_assert!(shift <= 65);
+        cb(fp, shift.min(64));
+        // Check for round-up: if rounding-nearest carried us to the hidden bit.
+        fp.exp = (fp.mant >= F::HIDDEN_BIT_MASK) as i32;
+        return;
     }
-}
 
-/// Calculate the halfway point for the lower `n` bits.
-#[inline]
-pub fn lower_n_halfway(n: u64) -> u64 {
-    let bits: u64 = mem::size_of::<u64>() as u64 * 8;
-    debug_assert!(n <= bits, "lower_n_halfway() overflow in shl.");
+    // The float is normal, round to the hidden bit.
+    cb(fp, mantissa_shift);
 
-    match n == 0 {
-        true => 0,
-        false => nth_bit(n - 1),
+    // Check if we carried, and if so, shift the bit to the hidden bit.
+    let carry_mask = F::CARRY_MASK;
+    if fp.mant & carry_mask == carry_mask {
+        fp.mant >>= 1;
+        fp.exp += 1;
     }
+
+    // Handle if we carried and check for overflow again.
+    if fp.exp >= F::INFINITE_POWER {
+        // Exponent is above largest normal value, must be infinite.
+        *fp = fp_inf;
+        return;
+    }
+
+    // Remove the hidden bit.
+    fp.mant &= F::MANTISSA_MASK;
 }
 
-/// Calculate a bitwise mask with `n` 1 bits starting at the `bit` position.
-#[inline]
-pub fn internal_n_mask(bit: u64, n: u64) -> u64 {
-    let bits: u64 = mem::size_of::<u64>() as u64 * 8;
-    debug_assert!(bit <= bits, "internal_n_halfway() overflow in shl.");
-    debug_assert!(n <= bits, "internal_n_halfway() overflow in shl.");
-    debug_assert!(bit >= n, "internal_n_halfway() overflow in sub.");
+/// Shift right N-bytes and round towards a direction.
+///
+/// Callback should take the following parameters:
+///     1. is_odd
+///     1. is_halfway
+///     1. is_above
+#[cfg_attr(not(feature = "compact"), inline)]
+pub fn round_nearest_tie_even<Cb>(fp: &mut ExtendedFloat, shift: i32, cb: Cb)
+where
+    // is_odd, is_halfway, is_above
+    Cb: Fn(bool, bool, bool) -> bool,
+{
+    // Ensure we've already handled denormal values that underflow.
+    debug_assert!(shift <= 64);
 
-    lower_n_mask(bit) ^ lower_n_mask(bit - n)
-}
-
-// NEAREST ROUNDING
-
-// Shift right N-bytes and round to the nearest.
-//
-// Return if we are above halfway and if we are halfway.
-#[inline]
-pub fn round_nearest(fp: &mut ExtendedFloat, shift: i32) -> (bool, bool) {
     // Extract the truncated bits using mask.
     // Calculate if the value of the truncated bits are either above
     // the mid-way point, or equal to it.
     //
-    // For example, for 4 truncated bytes, the mask would be b1111
-    // and the midway point would be b1000.
-    let mask: u64 = lower_n_mask(shift as u64);
-    let halfway: u64 = lower_n_halfway(shift as u64);
-
+    // For example, for 4 truncated bytes, the mask would be 0b1111
+    // and the midway point would be 0b1000.
+    let mask = lower_n_mask(shift as u64);
+    let halfway = lower_n_halfway(shift as u64);
     let truncated_bits = fp.mant & mask;
     let is_above = truncated_bits > halfway;
     let is_halfway = truncated_bits == halfway;
 
     // Bit shift so the leading bit is in the hidden bit.
-    overflowing_shr(fp, shift);
+    // This optimixes pretty well:
+    //  ```text
+    //   mov     ecx, esi
+    //   shr     rdi, cl
+    //   xor     eax, eax
+    //   cmp     esi, 64
+    //   cmovne  rax, rdi
+    //   ret
+    //  ```
+    fp.mant = match shift == 64 {
+        true => 0,
+        false => fp.mant >> shift,
+    };
+    fp.exp += shift;
 
-    (is_above, is_halfway)
-}
-
-// Tie rounded floating point to event.
-#[inline]
-pub fn tie_even(fp: &mut ExtendedFloat, is_above: bool, is_halfway: bool) {
     // Extract the last bit after shifting (and determine if it is odd).
     let is_odd = fp.mant & 1 == 1;
 
     // Calculate if we need to roundup.
     // We need to roundup if we are above halfway, or if we are odd
-    // and at half-way (need to tie-to-even).
-    if is_above || (is_odd && is_halfway) {
-        fp.mant += 1;
-    }
+    // and at half-way (need to tie-to-even). Avoid the branch here.
+    fp.mant += cb(is_odd, is_halfway, is_above) as u64;
 }
 
-// Shift right N-bytes and round nearest, tie-to-even.
-//
-// Floating-point arithmetic uses round to nearest, ties to even,
-// which rounds to the nearest value, if the value is halfway in between,
-// round to an even value.
-#[inline]
-pub fn round_nearest_tie_even(fp: &mut ExtendedFloat, shift: i32) {
-    let (is_above, is_halfway) = round_nearest(fp, shift);
-    tie_even(fp, is_above, is_halfway);
-}
-
-// DIRECTED ROUNDING
-
-// Shift right N-bytes and round towards a direction.
-//
-// Return if we have any truncated bytes.
-#[inline]
-fn round_toward(fp: &mut ExtendedFloat, shift: i32) -> bool {
-    let mask: u64 = lower_n_mask(shift as u64);
-    let truncated_bits = fp.mant & mask;
-
-    // Bit shift so the leading bit is in the hidden bit.
-    overflowing_shr(fp, shift);
-
-    truncated_bits != 0
-}
-
-// Round down.
-#[inline]
-fn downard(_: &mut ExtendedFloat, _: bool) {
-}
-
-// Shift right N-bytes and round toward zero.
-//
-// Floating-point arithmetic defines round toward zero, which rounds
-// towards positive zero.
-#[inline]
-pub fn round_downward(fp: &mut ExtendedFloat, shift: i32) {
-    // Bit shift so the leading bit is in the hidden bit.
-    // No rounding schemes, so we just ignore everything else.
-    let is_truncated = round_toward(fp, shift);
-    downard(fp, is_truncated);
-}
-
-// ROUND TO FLOAT
-
-// Shift the ExtendedFloat fraction to the fraction bits in a native float.
-//
-// Floating-point arithmetic uses round to nearest, ties to even,
-// which rounds to the nearest value, if the value is halfway in between,
-// round to an even value.
-#[inline]
-pub fn round_to_float<F, Algorithm>(fp: &mut ExtendedFloat, algorithm: Algorithm)
-where
-    F: Float,
-    Algorithm: FnOnce(&mut ExtendedFloat, i32),
-{
-    // Calculate the difference to allow a single calculation
-    // rather than a loop, to minimize the number of ops required.
-    // This does underflow detection.
-    let final_exp = fp.exp + F::DEFAULT_SHIFT;
-    if final_exp < F::DENORMAL_EXPONENT {
-        // We would end up with a denormal exponent, try to round to more
-        // digits. Only shift right if we can avoid zeroing out the value,
-        // which requires the exponent diff to be < M::BITS. The value
-        // is already normalized, so we shouldn't have any issue zeroing
-        // out the value.
-        let diff = F::DENORMAL_EXPONENT - fp.exp;
-        if diff <= u64::FULL {
-            // We can avoid underflow, can get a valid representation.
-            algorithm(fp, diff);
-        } else {
-            // Certain underflow, assign literal 0s.
-            fp.mant = 0;
-            fp.exp = 0;
-        }
-    } else {
-        algorithm(fp, F::DEFAULT_SHIFT);
-    }
-
-    if fp.mant & F::CARRY_MASK == F::CARRY_MASK {
-        // Roundup carried over to 1 past the hidden bit.
-        shr(fp, 1);
-    }
-}
-
-// AVOID OVERFLOW/UNDERFLOW
-
-// Avoid overflow for large values, shift left as needed.
-//
-// Shift until a 1-bit is in the hidden bit, if the mantissa is not 0.
-#[inline]
-pub fn avoid_overflow<F>(fp: &mut ExtendedFloat)
-where
-    F: Float,
-{
-    // Calculate the difference to allow a single calculation
-    // rather than a loop, minimizing the number of ops required.
-    if fp.exp >= F::MAX_EXPONENT {
-        let diff = fp.exp - F::MAX_EXPONENT;
-        if diff <= F::MANTISSA_SIZE {
-            // Our overflow mask needs to start at the hidden bit, or at
-            // `F::MANTISSA_SIZE+1`, and needs to have `diff+1` bits set,
-            // to see if our value overflows.
-            let bit = F::MANTISSA_SIZE as u64 + 1;
-            let n = diff as u64 + 1;
-            let mask = internal_n_mask(bit, n);
-            if (fp.mant & mask) == 0 {
-                // If we have no 1-bit in the hidden-bit position,
-                // which is index 0, we need to shift 1.
-                let shift = diff + 1;
-                shl(fp, shift);
-            }
-        }
-    }
-}
-
-// ROUND TO NATIVE
-
-// Round an extended-precision float to a native float representation.
-#[inline]
-pub fn round_to_native<F, Algorithm>(fp: &mut ExtendedFloat, algorithm: Algorithm)
-where
-    F: Float,
-    Algorithm: FnOnce(&mut ExtendedFloat, i32),
-{
-    // Shift all the way left, to ensure a consistent representation.
-    // The following right-shifts do not work for a non-normalized number.
-    fp.normalize();
-
-    // Round so the fraction is in a native mantissa representation,
-    // and avoid overflow/underflow.
-    round_to_float::<F, _>(fp, algorithm);
-    avoid_overflow::<F>(fp);
+/// Round our significant digits into place, truncating them.
+#[cfg_attr(not(feature = "compact"), inline)]
+pub fn round_down(fp: &mut ExtendedFloat, shift: i32) {
+    // Might have a shift greater than 64 if we have an error.
+    fp.mant = match shift == 64 {
+        true => 0,
+        false => fp.mant >> shift,
+    };
+    fp.exp += shift;
 }

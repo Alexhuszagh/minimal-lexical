@@ -2,114 +2,22 @@
 
 #![doc(hidden)]
 
+#[cfg(all(not(feature = "std"), feature = "compact"))]
+use crate::libm::{powd, powf};
+#[cfg(not(feature = "compact"))]
+use crate::table::{SMALL_F32_POW10, SMALL_F64_POW10, SMALL_INT_POW10, SMALL_INT_POW5};
+#[cfg(not(feature = "compact"))]
+use core::hint;
 use core::ops;
 
-/// Precalculated values of radix**i for i in range [0, arr.len()-1].
-/// Each value can be **exactly** represented as that type.
-const F32_POW10: [f32; 11] = [
-    1.0,
-    10.0,
-    100.0,
-    1000.0,
-    10000.0,
-    100000.0,
-    1000000.0,
-    10000000.0,
-    100000000.0,
-    1000000000.0,
-    10000000000.0,
-];
-
-/// Precalculated values of radix**i for i in range [0, arr.len()-1].
-/// Each value can be **exactly** represented as that type.
-const F64_POW10: [f64; 23] = [
-    1.0,
-    10.0,
-    100.0,
-    1000.0,
-    10000.0,
-    100000.0,
-    1000000.0,
-    10000000.0,
-    100000000.0,
-    1000000000.0,
-    10000000000.0,
-    100000000000.0,
-    1000000000000.0,
-    10000000000000.0,
-    100000000000000.0,
-    1000000000000000.0,
-    10000000000000000.0,
-    100000000000000000.0,
-    1000000000000000000.0,
-    10000000000000000000.0,
-    100000000000000000000.0,
-    1000000000000000000000.0,
-    10000000000000000000000.0,
-];
-
-/// Type that can be converted to primitive with `as`.
-pub trait AsPrimitive: Sized + Copy + PartialEq + PartialOrd + Send + Sync {
-    fn as_u32(self) -> u32;
-    fn as_u64(self) -> u64;
-    fn as_f32(self) -> f32;
-    fn as_f64(self) -> f64;
-}
-
-macro_rules! as_primitive_impl {
-    ($($t:tt)*) => ($(
-        impl AsPrimitive for $t {
-            #[inline]
-            fn as_u32(self) -> u32 {
-                self as u32
-            }
-
-            #[inline]
-            fn as_u64(self) -> u64 {
-                self as u64
-            }
-
-            #[inline]
-            fn as_f32(self) -> f32 {
-                self as f32
-            }
-
-            #[inline]
-            fn as_f64(self) -> f64 {
-                self as f64
-            }
-        }
-    )*)
-}
-
-as_primitive_impl! { u32 u64 f32 f64 }
-
-/// An interface for casting between machine scalars.
-pub trait AsCast: AsPrimitive {
-    /// Creates a number from another value that can be converted into
-    /// a primitive via the `AsPrimitive` trait.
-    fn as_cast<N: AsPrimitive>(n: N) -> Self;
-}
-
-macro_rules! as_cast_impl {
-    ($t:ty, $meth:ident) => {
-        impl AsCast for $t {
-            #[inline]
-            fn as_cast<N: AsPrimitive>(n: N) -> $t {
-                n.$meth()
-            }
-        }
-    };
-}
-
-as_cast_impl!(u32, as_u32);
-as_cast_impl!(u64, as_u64);
-as_cast_impl!(f32, as_f32);
-as_cast_impl!(f64, as_f64);
-
-/// Numerical type trait.
-pub trait Number:
-    AsCast
+/// Get exact exponent limit for radix.
+pub trait Float:
+    Sized
+    + Copy
+    + PartialEq
+    + PartialOrd
+    + Send
+    + Sync
     + ops::Add<Output = Self>
     + ops::AddAssign
     + ops::Div<Output = Self>
@@ -120,71 +28,8 @@ pub trait Number:
     + ops::RemAssign
     + ops::Sub<Output = Self>
     + ops::SubAssign
+    + ops::Neg<Output = Self>
 {
-}
-
-macro_rules! number_impl {
-    ($($t:tt)*) => ($(
-        impl Number for $t {
-        }
-    )*)
-}
-
-number_impl! { u32 u64 f32 f64 }
-
-/// Defines a trait that supports integral operations.
-pub trait Integer:
-    Number
-    + ops::BitAnd<Output = Self>
-    + ops::BitAndAssign
-    + ops::BitOr<Output = Self>
-    + ops::BitOrAssign
-    + ops::Shr<i32, Output = Self>
-    + ops::ShrAssign<i32>
-    + ops::Shl<i32, Output = Self>
-    + ops::ShlAssign<i32>
-{
-    const ZERO: Self;
-}
-
-macro_rules! integer_impl {
-    ($($t:tt)*) => ($(
-        impl Integer for $t {
-            const ZERO: $t = 0;
-        }
-    )*)
-}
-
-integer_impl! { u32 u64 }
-
-/// Type trait for the mantissa type.
-pub trait Mantissa: Integer {
-    /// Mask for the left-most bit, to check if the value is normalized.
-    const NORMALIZED_MASK: Self;
-    /// Mask to extract the high bits from the integer.
-    const HIMASK: Self;
-    /// Mask to extract the low bits from the integer.
-    const LOMASK: Self;
-    /// Full size of the integer, in bits.
-    const FULL: i32;
-    /// Half size of the integer, in bits.
-    const HALF: i32 = Self::FULL / 2;
-}
-
-impl Mantissa for u64 {
-    const NORMALIZED_MASK: u64 = 0x8000000000000000;
-    const HIMASK: u64 = 0xFFFFFFFF00000000;
-    const LOMASK: u64 = 0x00000000FFFFFFFF;
-    const FULL: i32 = 64;
-}
-
-/// Get exact exponent limit for radix.
-pub trait Float: Number + ops::Neg<Output = Self> {
-    /// Unsigned type of the same size.
-    type Unsigned: Integer;
-
-    /// Literal zero.
-    const ZERO: Self;
     /// Maximum number of digits that can contribute in the mantissa.
     ///
     /// We can exactly represent a float in radix `b` from radix 2 if
@@ -214,20 +59,16 @@ pub trait Float: Number + ops::Neg<Output = Self> {
     // MASKS
 
     /// Bitmask for the sign bit.
-    const SIGN_MASK: Self::Unsigned;
+    const SIGN_MASK: u64;
     /// Bitmask for the exponent, including the hidden bit.
-    const EXPONENT_MASK: Self::Unsigned;
+    const EXPONENT_MASK: u64;
     /// Bitmask for the hidden bit in exponent, which is an implicit 1 in the fraction.
-    const HIDDEN_BIT_MASK: Self::Unsigned;
+    const HIDDEN_BIT_MASK: u64;
     /// Bitmask for the mantissa (fraction), excluding the hidden bit.
-    const MANTISSA_MASK: Self::Unsigned;
+    const MANTISSA_MASK: u64;
 
     // PROPERTIES
 
-    /// Positive infinity as bits.
-    const INFINITY_BITS: Self::Unsigned;
-    /// Positive infinity as bits.
-    const NEGATIVE_INFINITY_BITS: Self::Unsigned;
     /// Size of the significand (mantissa) without hidden bit.
     const MANTISSA_SIZE: i32;
     /// Bias of the exponet
@@ -239,28 +80,96 @@ pub trait Float: Number + ops::Neg<Output = Self> {
 
     // ROUNDING
 
-    /// Default number of bits to shift (or 64 - mantissa size - 1).
-    const DEFAULT_SHIFT: i32;
     /// Mask to determine if a full-carry occurred (1 in bit above hidden bit).
     const CARRY_MASK: u64;
 
-    /// Get min and max exponent limits (exact) from radix.
-    fn exponent_limit() -> (i32, i32);
+    /// Bias for marking an invalid extended float.
+    const INVALID_FP: i32 = i16::MIN as i32;
 
-    /// Get the number of digits that can be shifted from exponent to mantissa.
-    fn mantissa_limit() -> i32;
+    // Maximum mantissa for the fast-path (`1 << 53` for f64).
+    const MAX_MANTISSA_FAST_PATH: u64 = 2_u64 << Self::MANTISSA_SIZE;
+
+    // Largest exponent value `(1 << EXP_BITS) - 1`.
+    const INFINITE_POWER: i32 = Self::MAX_EXPONENT + Self::EXPONENT_BIAS;
+
+    // Round-to-even only happens for negative values of q
+    // when q ≥ −4 in the 64-bit case and when q ≥ −17 in
+    // the 32-bitcase.
+    //
+    // When q ≥ 0,we have that 5^q ≤ 2m+1. In the 64-bit case,we
+    // have 5^q ≤ 2m+1 ≤ 2^54 or q ≤ 23. In the 32-bit case,we have
+    // 5^q ≤ 2m+1 ≤ 2^25 or q ≤ 10.
+    //
+    // When q < 0, we have w ≥ (2m+1)×5^−q. We must have that w < 2^64
+    // so (2m+1)×5^−q < 2^64. We have that 2m+1 > 2^53 (64-bit case)
+    // or 2m+1 > 2^24 (32-bit case). Hence,we must have 2^53×5^−q < 2^64
+    // (64-bit) and 2^24×5^−q < 2^64 (32-bit). Hence we have 5^−q < 2^11
+    // or q ≥ −4 (64-bit case) and 5^−q < 2^40 or q ≥ −17 (32-bitcase).
+    //
+    // Thus we have that we only need to round ties to even when
+    // we have that q ∈ [−4,23](in the 64-bit case) or q∈[−17,10]
+    // (in the 32-bit case). In both cases,the power of five(5^|q|)
+    // fits in a 64-bit word.
+    const MIN_EXPONENT_ROUND_TO_EVEN: i32;
+    const MAX_EXPONENT_ROUND_TO_EVEN: i32;
+
+    /// Minimum normal exponent value `-(1 << (EXPONENT_SIZE - 1)) + 1`.
+    const MINIMUM_EXPONENT: i32;
+
+    /// Smallest decimal exponent for a non-zero value.
+    const SMALLEST_POWER_OF_TEN: i32;
+
+    /// Largest decimal exponent for a non-infinite value.
+    const LARGEST_POWER_OF_TEN: i32;
+
+    /// Minimum exponent that for a fast path case, or `-⌊(MANTISSA_SIZE+1)/log2(10)⌋`
+    const MIN_EXPONENT_FAST_PATH: i32;
+
+    /// Maximum exponent that for a fast path case, or `⌊(MANTISSA_SIZE+1)/log2(5)⌋`
+    const MAX_EXPONENT_FAST_PATH: i32;
+
+    /// Maximum exponent that can be represented for a disguised-fast path case.
+    /// This is `MAX_EXPONENT_FAST_PATH + ⌊(MANTISSA_SIZE+1)/log2(10)⌋`
+    const MAX_EXPONENT_DISGUISED_FAST_PATH: i32;
+
+    /// Convert 64-bit integer to float.
+    fn from_u64(u: u64) -> Self;
 
     // Re-exported methods from std.
-    fn pow10(self, n: i32) -> Self;
-    fn from_bits(u: Self::Unsigned) -> Self;
-    fn to_bits(self) -> Self::Unsigned;
+    fn from_bits(u: u64) -> Self;
+    fn to_bits(self) -> u64;
     fn is_sign_positive(self) -> bool;
-    fn is_sign_negative(self) -> bool;
+
+    /// Get a small power-of-radix for fast-path multiplication.
+    ///
+    /// # Safety
+    ///
+    /// Safe as long as the exponent is smaller than the table size.
+    unsafe fn pow_fast_path(exponent: usize) -> Self;
+
+    /// Get a small, integral power-of-radix for fast-path multiplication.
+    ///
+    /// # Safety
+    ///
+    /// Safe as long as the exponent is smaller than the table size.
+    #[inline(always)]
+    unsafe fn int_pow_fast_path(exponent: usize, radix: u32) -> u64 {
+        // SAFETY: safe as long as the exponent is smaller than the radix table.
+        #[cfg(not(feature = "compact"))]
+        return match radix {
+            5 => unsafe { *SMALL_INT_POW5.get_unchecked(exponent) },
+            10 => unsafe { *SMALL_INT_POW10.get_unchecked(exponent) },
+            _ => unsafe { hint::unreachable_unchecked() },
+        };
+
+        #[cfg(feature = "compact")]
+        return (radix as u64).wrapping_pow(exponent as u32);
+    }
 
     /// Returns true if the float is a denormal.
     #[inline]
     fn is_denormal(self) -> bool {
-        self.to_bits() & Self::EXPONENT_MASK == Self::Unsigned::ZERO
+        self.to_bits() & Self::EXPONENT_MASK == 0
     }
 
     /// Returns true if the float is a NaN or Infinite.
@@ -272,13 +181,13 @@ pub trait Float: Number + ops::Neg<Output = Self> {
     /// Returns true if the float is NaN.
     #[inline]
     fn is_nan(self) -> bool {
-        self.is_special() && (self.to_bits() & Self::MANTISSA_MASK) != Self::Unsigned::ZERO
+        self.is_special() && (self.to_bits() & Self::MANTISSA_MASK) != 0
     }
 
     /// Returns true if the float is infinite.
     #[inline]
     fn is_inf(self) -> bool {
-        self.is_special() && (self.to_bits() & Self::MANTISSA_MASK) == Self::Unsigned::ZERO
+        self.is_special() && (self.to_bits() & Self::MANTISSA_MASK) == 0
     }
 
     /// Get exponent component from the float.
@@ -289,13 +198,13 @@ pub trait Float: Number + ops::Neg<Output = Self> {
         }
 
         let bits = self.to_bits();
-        let biased_e: i32 = ((bits & Self::EXPONENT_MASK).as_u64() >> Self::MANTISSA_SIZE) as i32;
+        let biased_e: i32 = ((bits & Self::EXPONENT_MASK) >> Self::MANTISSA_SIZE) as i32;
         biased_e - Self::EXPONENT_BIAS
     }
 
     /// Get mantissa (significand) component from float.
     #[inline]
-    fn mantissa(self) -> Self::Unsigned {
+    fn mantissa(self) -> u64 {
         let bits = self.to_bits();
         let s = bits & Self::MANTISSA_MASK;
         if !self.is_denormal() {
@@ -310,13 +219,13 @@ pub trait Float: Number + ops::Neg<Output = Self> {
     #[inline]
     fn next_positive(self) -> Self {
         debug_assert!(self.is_sign_positive() && !self.is_inf());
-        Self::from_bits(self.to_bits() + Self::Unsigned::as_cast(1u32))
+        Self::from_bits(self.to_bits() + 1)
     }
 
     /// Round a positive number to even.
     #[inline]
     fn round_positive_even(self) -> Self {
-        if self.mantissa() & Self::Unsigned::as_cast(1u32) == Self::Unsigned::as_cast(1u32) {
+        if self.mantissa() & 1 == 1 {
             self.next_positive()
         } else {
             self
@@ -325,110 +234,90 @@ pub trait Float: Number + ops::Neg<Output = Self> {
 }
 
 impl Float for f32 {
-    type Unsigned = u32;
-
-    const ZERO: f32 = 0.0;
     const MAX_DIGITS: usize = 114;
-    const SIGN_MASK: u32 = 0x80000000;
-    const EXPONENT_MASK: u32 = 0x7F800000;
-    const HIDDEN_BIT_MASK: u32 = 0x00800000;
-    const MANTISSA_MASK: u32 = 0x007FFFFF;
-    const INFINITY_BITS: u32 = 0x7F800000;
-    const NEGATIVE_INFINITY_BITS: u32 = Self::INFINITY_BITS | Self::SIGN_MASK;
+    const SIGN_MASK: u64 = 0x80000000;
+    const EXPONENT_MASK: u64 = 0x7F800000;
+    const HIDDEN_BIT_MASK: u64 = 0x00800000;
+    const MANTISSA_MASK: u64 = 0x007FFFFF;
     const MANTISSA_SIZE: i32 = 23;
     const EXPONENT_BIAS: i32 = 127 + Self::MANTISSA_SIZE;
     const DENORMAL_EXPONENT: i32 = 1 - Self::EXPONENT_BIAS;
     const MAX_EXPONENT: i32 = 0xFF - Self::EXPONENT_BIAS;
-    const DEFAULT_SHIFT: i32 = u64::FULL - f32::MANTISSA_SIZE - 1;
     const CARRY_MASK: u64 = 0x1000000;
+    const MIN_EXPONENT_ROUND_TO_EVEN: i32 = -17;
+    const MAX_EXPONENT_ROUND_TO_EVEN: i32 = 10;
+    const MINIMUM_EXPONENT: i32 = -127;
+    const SMALLEST_POWER_OF_TEN: i32 = -65;
+    const LARGEST_POWER_OF_TEN: i32 = 38;
+    const MIN_EXPONENT_FAST_PATH: i32 = -10;
+    const MAX_EXPONENT_FAST_PATH: i32 = 10;
+    const MAX_EXPONENT_DISGUISED_FAST_PATH: i32 = 17;
 
-    #[inline]
-    fn exponent_limit() -> (i32, i32) {
-        (-10, 10)
+    #[inline(always)]
+    unsafe fn pow_fast_path(exponent: usize) -> Self {
+        // SAFETY: safe as long as the exponent is smaller than the radix table.
+        #[cfg(not(feature = "compact"))]
+        return unsafe { *SMALL_F32_POW10.get_unchecked(exponent) };
+
+        #[cfg(feature = "compact")]
+        return powf(10.0f32, exponent as f32);
     }
 
     #[inline]
-    fn mantissa_limit() -> i32 {
-        7
+    fn from_u64(u: u64) -> f32 {
+        u as _
     }
 
     #[inline]
-    fn pow10(self, n: i32) -> f32 {
-        // Check the exponent is within bounds in debug builds.
-        debug_assert!({
-            let (min, max) = Self::exponent_limit();
-            n >= min && n <= max
-        });
-
-        if n > 0 {
-            self * F32_POW10[n as usize]
-        } else {
-            self / F32_POW10[(-n) as usize]
-        }
+    fn from_bits(u: u64) -> f32 {
+        debug_assert!(u <= u32::MAX as u64);
+        f32::from_bits(u as u32)
     }
 
     #[inline]
-    fn from_bits(u: u32) -> f32 {
-        f32::from_bits(u)
-    }
-
-    #[inline]
-    fn to_bits(self) -> u32 {
-        f32::to_bits(self)
+    fn to_bits(self) -> u64 {
+        f32::to_bits(self) as u64
     }
 
     #[inline]
     fn is_sign_positive(self) -> bool {
         f32::is_sign_positive(self)
     }
-
-    #[inline]
-    fn is_sign_negative(self) -> bool {
-        f32::is_sign_negative(self)
-    }
 }
 
 impl Float for f64 {
-    type Unsigned = u64;
-
-    const ZERO: f64 = 0.0;
     const MAX_DIGITS: usize = 769;
     const SIGN_MASK: u64 = 0x8000000000000000;
     const EXPONENT_MASK: u64 = 0x7FF0000000000000;
     const HIDDEN_BIT_MASK: u64 = 0x0010000000000000;
     const MANTISSA_MASK: u64 = 0x000FFFFFFFFFFFFF;
-    const INFINITY_BITS: u64 = 0x7FF0000000000000;
-    const NEGATIVE_INFINITY_BITS: u64 = Self::INFINITY_BITS | Self::SIGN_MASK;
     const MANTISSA_SIZE: i32 = 52;
     const EXPONENT_BIAS: i32 = 1023 + Self::MANTISSA_SIZE;
     const DENORMAL_EXPONENT: i32 = 1 - Self::EXPONENT_BIAS;
     const MAX_EXPONENT: i32 = 0x7FF - Self::EXPONENT_BIAS;
-    const DEFAULT_SHIFT: i32 = u64::FULL - f64::MANTISSA_SIZE - 1;
     const CARRY_MASK: u64 = 0x20000000000000;
+    const MIN_EXPONENT_ROUND_TO_EVEN: i32 = -4;
+    const MAX_EXPONENT_ROUND_TO_EVEN: i32 = 23;
+    const MINIMUM_EXPONENT: i32 = -1023;
+    const SMALLEST_POWER_OF_TEN: i32 = -342;
+    const LARGEST_POWER_OF_TEN: i32 = 308;
+    const MIN_EXPONENT_FAST_PATH: i32 = -22;
+    const MAX_EXPONENT_FAST_PATH: i32 = 22;
+    const MAX_EXPONENT_DISGUISED_FAST_PATH: i32 = 37;
 
-    #[inline]
-    fn exponent_limit() -> (i32, i32) {
-        (-22, 22)
+    #[inline(always)]
+    unsafe fn pow_fast_path(exponent: usize) -> Self {
+        // SAFETY: safe as long as the exponent is smaller than the radix table.
+        #[cfg(not(feature = "compact"))]
+        return unsafe { *SMALL_F64_POW10.get_unchecked(exponent) };
+
+        #[cfg(feature = "compact")]
+        return powd(10.0f64, exponent as f64);
     }
 
     #[inline]
-    fn mantissa_limit() -> i32 {
-        15
-    }
-
-    #[inline]
-    fn pow10(self, n: i32) -> f64 {
-        // Check the exponent is within bounds in debug builds.
-        debug_assert!({
-            let (min, max) = Self::exponent_limit();
-            n >= min && n <= max
-        });
-
-        if n > 0 {
-            self * F64_POW10[n as usize]
-        } else {
-            self / F64_POW10[(-n) as usize]
-        }
+    fn from_u64(u: u64) -> f64 {
+        u as _
     }
 
     #[inline]
@@ -445,9 +334,16 @@ impl Float for f64 {
     fn is_sign_positive(self) -> bool {
         f64::is_sign_positive(self)
     }
+}
 
-    #[inline]
-    fn is_sign_negative(self) -> bool {
-        f64::is_sign_negative(self)
-    }
+#[inline(always)]
+#[cfg(all(feature = "std", feature = "compact"))]
+pub fn powf(x: f32, y: f32) -> f32 {
+    x.powf(y)
+}
+
+#[inline(always)]
+#[cfg(all(feature = "std", feature = "compact"))]
+pub fn powd(x: f64, y: f64) -> f64 {
+    x.powf(y)
 }

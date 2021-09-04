@@ -43,30 +43,25 @@
 #[cfg(all(not(feature = "no_alloc"), not(feature = "std")))]
 extern crate alloc;
 
-// MODULES
-pub mod algorithm;
-pub mod bhcomp;
-pub mod bignum;
-pub mod digit;
-pub mod exponent;
+pub mod bellerophon;
+pub mod bigint;
 pub mod extended_float;
-pub mod float;
-pub mod large_powers;
+pub mod fpu;
+pub mod heapvec;
 pub mod lemire;
-pub mod math;
+pub mod libm;
+pub mod mask;
 pub mod num;
+pub mod number;
 pub mod parse;
-pub mod powers;
 pub mod rounding;
-pub mod shift;
-pub mod slice;
-pub mod small_powers;
+pub mod slow;
+pub mod stackvec;
+pub mod table;
 
-#[cfg(not(all(target_pointer_width = "64", not(target_arch = "sparc"))))]
-pub mod large_powers32;
-
-#[cfg(all(target_pointer_width = "64", not(target_arch = "sparc")))]
-pub mod large_powers64;
+mod table_bellerophon;
+mod table_lemire;
+mod table_small;
 
 // API
 pub use self::num::Float;
