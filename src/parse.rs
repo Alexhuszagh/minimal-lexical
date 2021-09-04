@@ -16,38 +16,56 @@ use crate::slow::slow;
 /// * `integer`     - Slice containing the integer digits.
 /// * `fraction`    - Slice containing the fraction digits.
 #[inline]
-fn parse_mantissa<'a, Iter1, Iter2>(mut integer: Iter1, fraction: Iter2, exponent: i32) -> Number
+fn parse_mantissa<'a, Iter1, Iter2>(mut integer: Iter1, mut fraction: Iter2, exponent: i32) -> Number
 where
     Iter1: Iterator<Item = &'a u8>,
     Iter2: Iterator<Item = &'a u8>,
 {
+    // Can only add 19 digits.
     let mut num = Number::default();
+    let mut count = 0;
     while let Some(&c) = integer.next() {
-        num.mantissa = match add_digit(num.mantissa, c - b'0') {
-            Some(mant) => mant,
-            None => {
-                // Only the integer digits affect the exponent.
-                num.many_digits = true;
-                num.exponent = exponent.saturating_add(into_i32(1 + integer.count()));
-                return num;
-            },
-        };
+        count += 1;
+        if count == 20 {
+            // Only the integer digits affect the exponent.
+            num.many_digits = true;
+            num.exponent = exponent.saturating_add(into_i32(1 + integer.count()));
+            return num;
+        } else {
+            let digit = c - b'0';
+            num.mantissa = num.mantissa * 10 + digit as u64;
+        }
     }
+
+    // Skip leading fraction zeros.
+    // This is required otherwise we might have a 0 mantissa and many digits.
     let mut fraction_count: usize = 0;
+    if count == 0 {
+        for &c in &mut fraction {
+            fraction_count += 1;
+            if c != b'0' {
+                count += 1;
+                let digit = c - b'0';
+                num.mantissa = num.mantissa * 10 + digit as u64;
+                break;
+            }
+        }
+    }
     for c in fraction {
         fraction_count += 1;
-        num.mantissa = match add_digit(num.mantissa, c - b'0') {
-            Some(mant) => mant,
-            None => {
-                num.many_digits = true;
-                // This can't wrap, since we have at most 20 digits.
-                // We've adjusted the exponent too high by `fraction_count - 1`.
-                // Note: -1 is due to incrementing this loop iteration, which we
-                // didn't use.
-                num.exponent = exponent.saturating_sub(fraction_count as i32 - 1);
-                return num;
-            },
-        };
+        count += 1;
+        if count == 20 {
+            num.many_digits = true;
+            // This can't wrap, since we have at most 20 digits.
+            // We've adjusted the exponent too high by `fraction_count - 1`.
+            // Note: -1 is due to incrementing this loop iteration, which we
+            // didn't use.
+            num.exponent = exponent.saturating_sub(fraction_count as i32 - 1);
+            return num;
+        } else {
+            let digit = c - b'0';
+            num.mantissa = num.mantissa * 10 + digit as u64;
+        }
     }
 
     // No truncated digits: easy.

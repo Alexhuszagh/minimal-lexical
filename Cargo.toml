@@ -16,6 +16,7 @@ exclude = [
     "ci/*",
     "docs/*",
     "etc/*",
+    "fuzz/*",
     "examples/*",
     "scripts/*"
 ]

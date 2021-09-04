@@ -1,0 +1,38 @@
+[package]
+name = "minimal-lexical-fuzz"
+version = "0.0.1"
+authors = ["Alex Huszagh <ahuszagh@gmail.com>"]
+edition = "2018"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies.minimal-lexical]
+path = ".."
+default-features = false
+features = []
+
+[dependencies]
+libfuzzer-sys = "0.2.0"
+
+[features]
+default = ["std"]
+std = ["minimal-lexical/std"]
+compact = ["minimal-lexical/compact"]
+no_alloc = ["minimal-lexical/no_alloc"]
+nightly = ["minimal-lexical/nightly"]
+
+[profile.release]
+opt-level = 3
+debug = false
+debug-assertions = false
+lto = true
+
+[[bin]]
+name = "parse-float-f32"
+path = "fuzz_targets/parse-float-f32.rs"
+
+[[bin]]
+name = "parse-float-f64"
+path = "fuzz_targets/parse-float-f64.rs"
