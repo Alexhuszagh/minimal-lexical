@@ -18,9 +18,8 @@ fi
 # Test various feature combinations.
 FEATURES=(
     "compact"
-    # TODO(ahuszagh) Change to alloc.
-    "no_alloc"
-    "compact,no_alloc"
+    "alloc"
+    "compact,alloc"
 )
 
 check() {

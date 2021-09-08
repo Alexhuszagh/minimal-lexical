@@ -20,7 +20,7 @@ libfuzzer-sys = "0.2.0"
 default = ["std"]
 std = ["minimal-lexical/std"]
 compact = ["minimal-lexical/compact"]
-no_alloc = ["minimal-lexical/no_alloc"]
+alloc = ["minimal-lexical/alloc"]
 nightly = ["minimal-lexical/nightly"]
 
 [profile.release]

@@ -1,6 +1,6 @@
 //! Simple stack-allocated vector.
 
-#![cfg(feature = "no_alloc")]
+#![cfg(not(feature = "alloc"))]
 #![doc(hidden)]
 
 use crate::bigint;
