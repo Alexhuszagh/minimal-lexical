@@ -40,7 +40,7 @@
 #![cfg_attr(feature = "lint", warn(unsafe_op_in_unsafe_fn))]
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(all(not(feature = "no_alloc"), not(feature = "std")))]
+#[cfg(all(feature = "alloc", not(feature = "std")))]
 extern crate alloc;
 
 pub mod bellerophon;

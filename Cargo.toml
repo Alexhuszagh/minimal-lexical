@@ -27,8 +27,8 @@ default = ["std"]
 std = []
 # Reduce code size at the cost of performance.
 compact = []
-# Do not use a system allocator anywhere.
-no_alloc = []
+# Use the system allocator.
+alloc = []
 # Add support for nightly-only features.
 nightly = []
 

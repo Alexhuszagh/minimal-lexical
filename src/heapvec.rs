@@ -1,6 +1,6 @@
 //! Simple heap-allocated vector.
 
-#![cfg(not(feature = "no_alloc"))]
+#![cfg(feature = "alloc")]
 #![doc(hidden)]
 
 use crate::bigint;
