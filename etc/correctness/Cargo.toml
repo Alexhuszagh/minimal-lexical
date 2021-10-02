@@ -23,7 +23,7 @@ toml = "0.5"
 default = ["std"]
 std = ["minimal-lexical/std"]
 compact = ["minimal-lexical/compact"]
-no_alloc = ["minimal-lexical/no_alloc"]
+alloc = ["minimal-lexical/alloc"]
 nightly = ["minimal-lexical/nightly"]
 
 # Special testing binaries for the runtests.py scripts.

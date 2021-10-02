@@ -1,7 +1,7 @@
 use minimal_lexical::bigint;
-#[cfg(not(feature = "no_alloc"))]
+#[cfg(feature = "alloc")]
 pub use minimal_lexical::heapvec::HeapVec as VecType;
-#[cfg(feature = "no_alloc")]
+#[cfg(not(feature = "alloc"))]
 pub use minimal_lexical::stackvec::StackVec as VecType;
 
 pub fn vec_from_u32(x: &[u32]) -> VecType {

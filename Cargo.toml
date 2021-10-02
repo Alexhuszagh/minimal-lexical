@@ -10,7 +10,7 @@ license = "MIT/Apache-2.0"
 name = "minimal-lexical"
 readme = "README.md"
 repository = "https://github.com/Alexhuszagh/minimal-lexical"
-version = "0.1.4"
+version = "0.2.0"
 exclude = [
     "assets/*",
     "ci/*",
@@ -27,8 +27,8 @@ default = ["std"]
 std = []
 # Reduce code size at the cost of performance.
 compact = []
-# Do not use a system allocator anywhere.
-no_alloc = []
+# Use the system allocator.
+alloc = []
 # Add support for nightly-only features.
 nightly = []
 

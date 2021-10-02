@@ -28,7 +28,7 @@ First, add the following to your `Cargo.toml`.
 
 ```toml
 [dependencies]
-minimal-lexical = "0.1"
+minimal-lexical = "0.2"
 ```
 
 Next, to parse a simple float, use the following:

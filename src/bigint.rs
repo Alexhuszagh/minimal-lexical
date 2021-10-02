@@ -4,10 +4,10 @@
 
 #![doc(hidden)]
 
-#[cfg(not(feature = "no_alloc"))]
+#[cfg(feature = "alloc")]
 use crate::heapvec::HeapVec;
 use crate::num::Float;
-#[cfg(feature = "no_alloc")]
+#[cfg(not(feature = "alloc"))]
 use crate::stackvec::StackVec;
 #[cfg(not(feature = "compact"))]
 use crate::table::{LARGE_POW5, LARGE_POW5_STEP};
@@ -23,10 +23,10 @@ pub const BIGINT_BITS: usize = 4000;
 /// The number of limbs for the bigint.
 pub const BIGINT_LIMBS: usize = BIGINT_BITS / LIMB_BITS;
 
-#[cfg(not(feature = "no_alloc"))]
+#[cfg(feature = "alloc")]
 pub type VecType = HeapVec;
 
-#[cfg(feature = "no_alloc")]
+#[cfg(not(feature = "alloc"))]
 pub type VecType = StackVec;
 
 /// Storage for a big integer type.
