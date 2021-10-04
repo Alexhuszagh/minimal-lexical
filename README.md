@@ -95,8 +95,7 @@ All changes are documented in [CHANGELOG](CHANGELOG).
 
 # License
 
-Minimal-lexical is dual licensed under the Apache 2.0 license as well as the MIT
-license. See the [LICENSE.md](LICENSE.md) file for full license details.
+Minimal-lexical is dual licensed under the Apache 2.0 license as well as the MIT license. See the [LICENSE.md](LICENSE.md) file for full license details.
 
 # Contributing
 
