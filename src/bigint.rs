@@ -6,7 +6,7 @@
 
 #[cfg(feature = "alloc")]
 use crate::heapvec::HeapVec;
-use crate::num::Float;
+use crate::num::{int_pow_fast_path, FastPathRadix};
 #[cfg(not(feature = "alloc"))]
 use crate::stackvec::StackVec;
 #[cfg(not(feature = "compact"))]
@@ -395,7 +395,7 @@ pub fn pow(x: &mut VecType, mut exp: u32) -> Option<()> {
     }
     if exp != 0 {
         // SAFETY: safe, since `exp < small_step`.
-        let small_power = unsafe { f64::int_pow_fast_path(exp as usize, 5) };
+        let small_power = unsafe { int_pow_fast_path(exp as usize, FastPathRadix::Five) };
         small_mul(x, small_power as Limb)?;
     }
     Some(())

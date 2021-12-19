@@ -7,7 +7,7 @@
 
 #[cfg(feature = "nightly")]
 use crate::fpu::set_precision;
-use crate::num::Float;
+use crate::num::{int_pow_fast_path, FastPathRadix, Float};
 
 /// Representation of a number as the significant digits and exponent.
 ///
@@ -68,7 +68,7 @@ impl Number {
                 // disguised fast path
                 let shift = self.exponent - max_exponent;
                 // SAFETY: safe, since `shift <= (max_disguised - max_exponent)`.
-                let int_power = unsafe { F::int_pow_fast_path(shift as usize, 10) };
+                let int_power = unsafe { int_pow_fast_path(shift as usize, FastPathRadix::Ten) };
                 let mantissa = self.mantissa.checked_mul(int_power)?;
                 if mantissa > F::MAX_MANTISSA_FAST_PATH {
                     return None;

@@ -8,7 +8,7 @@
 
 use crate::bigint::{Bigint, Limb, LIMB_BITS};
 use crate::extended_float::{extended_to_float, ExtendedFloat};
-use crate::num::Float;
+use crate::num::{int_pow_fast_path, FastPathRadix, Float};
 use crate::number::Number;
 use crate::rounding::{round, round_down, round_nearest_tie_even};
 use core::cmp;
@@ -207,7 +207,7 @@ macro_rules! add_temporary {
     ($format:ident, $result:ident, $counter:ident, $value:ident) => {
         if $counter != 0 {
             // SAFETY: safe, since `counter <= step`, or smaller than the table size.
-            let small_power = unsafe { f64::int_pow_fast_path($counter, 10) };
+            let small_power = unsafe { int_pow_fast_path($counter, FastPathRadix::Ten) };
             add_temporary!(@mul $result, small_power as Limb, $value);
             $counter = 0;
             $value = 0;
@@ -222,7 +222,7 @@ macro_rules! add_temporary {
     (@end $format:ident, $result:ident, $counter:ident, $value:ident) => {
         if $counter != 0 {
             // SAFETY: safe, since `counter <= step`, or smaller than the table size.
-            let small_power = unsafe { f64::int_pow_fast_path($counter, 10) };
+            let small_power = unsafe { int_pow_fast_path($counter, FastPathRadix::Ten) };
             add_temporary!(@mul $result, small_power as Limb, $value);
         }
     };
