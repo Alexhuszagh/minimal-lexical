@@ -6,8 +6,6 @@
 use crate::libm::{powd, powf};
 #[cfg(not(feature = "compact"))]
 use crate::table::{SMALL_F32_POW10, SMALL_F64_POW10, SMALL_INT_POW10, SMALL_INT_POW5};
-#[cfg(not(feature = "compact"))]
-use core::hint;
 use core::ops;
 
 /// Generic floating-point type, to be used in generic code for parsing.
@@ -151,25 +149,6 @@ pub trait Float:
     /// Safe as long as the exponent is smaller than the table size.
     unsafe fn pow_fast_path(exponent: usize) -> Self;
 
-    /// Get a small, integral power-of-radix for fast-path multiplication.
-    ///
-    /// # Safety
-    ///
-    /// Safe as long as the exponent is smaller than the table size.
-    #[inline(always)]
-    unsafe fn int_pow_fast_path(exponent: usize, radix: u32) -> u64 {
-        // SAFETY: safe as long as the exponent is smaller than the radix table.
-        #[cfg(not(feature = "compact"))]
-        return match radix {
-            5 => unsafe { *SMALL_INT_POW5.get_unchecked(exponent) },
-            10 => unsafe { *SMALL_INT_POW10.get_unchecked(exponent) },
-            _ => unsafe { hint::unreachable_unchecked() },
-        };
-
-        #[cfg(feature = "compact")]
-        return (radix as u64).pow(exponent as u32);
-    }
-
     /// Returns true if the float is a denormal.
     #[inline]
     fn is_denormal(self) -> bool {
@@ -305,4 +284,36 @@ pub fn powf(x: f32, y: f32) -> f32 {
 #[cfg(all(feature = "std", feature = "compact"))]
 pub fn powd(x: f64, y: f64) -> f64 {
     x.powf(y)
+}
+
+pub(crate) enum FastPathRadix {
+    Five,
+    Ten,
+}
+
+impl From<FastPathRadix> for u64 {
+    fn from(radix: FastPathRadix) -> u64 {
+        match radix {
+            FastPathRadix::Five => 5,
+            FastPathRadix::Ten => 10,
+        }
+    }
+}
+
+/// Get a small, integral power-of-radix for fast-path multiplication.
+///
+/// # Safety
+///
+/// Safe as long as the exponent is smaller than the table size.
+#[inline(always)]
+pub(crate) unsafe fn int_pow_fast_path(exponent: usize, radix: FastPathRadix) -> u64 {
+    // SAFETY: safe as long as the exponent is smaller than the radix table.
+    #[cfg(not(feature = "compact"))]
+    return match radix {
+        FastPathRadix::Five => unsafe { *SMALL_INT_POW5.get_unchecked(exponent) },
+        FastPathRadix::Ten => unsafe { *SMALL_INT_POW10.get_unchecked(exponent) },
+    };
+
+    #[cfg(feature = "compact")]
+    return u64::from(radix).pow(exponent as u32);
 }
