@@ -380,7 +380,7 @@ pub fn scientific_exponent(num: &Number) -> i32 {
         mantissa /= 10;
         exponent += 1;
     }
-    exponent as i32
+    exponent
 }
 
 /// Calculate `b` from a a representation of `b` as a float.
