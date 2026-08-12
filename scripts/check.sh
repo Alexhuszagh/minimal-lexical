@@ -14,4 +14,3 @@ cargo +nightly fmt -- --check
 cargo +nightly clippy --no-default-features -- --deny warnings
 cargo +nightly clippy --features=compact -- --deny warnings
 cargo +nightly clippy --features=alloc -- --deny warnings
-

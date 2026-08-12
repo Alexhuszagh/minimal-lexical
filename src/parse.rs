@@ -128,7 +128,7 @@ where
 /// 1. The integer should not have leading zeros.
 /// 2. The fraction should not have trailing zeros.
 /// 3. All bytes in `integer` and `fraction` should be valid digits,
-///     in the range [`b'0', b'9'].
+///    in the range [`b'0', b'9'].
 ///
 /// # Panics
 ///
@@ -186,6 +186,8 @@ pub fn moderate_path<F: Float>(num: &Number) -> ExtendedFloat {
 /// This is needed to ensure when adjusting the exponent relative to
 /// the mantissa we do not overflow for comically-long exponents.
 #[inline]
+// NOTE: legacy numeric constants stable in Rust 1.43.0
+#[allow(deprecated)]
 fn into_i32(value: usize) -> i32 {
     if value > i32::max_value() as usize {
         i32::max_value()

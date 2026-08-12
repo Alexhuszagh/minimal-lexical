@@ -105,7 +105,7 @@ impl ops::MulAssign<&Bigint> for Bigint {
     }
 }
 
-/// REVERSE VIEW
+// REVERSE VIEW
 
 /// Reverse, immutable view of a sequence.
 pub struct ReverseView<'a, T: 'a> {
@@ -124,7 +124,7 @@ impl<'a, T> ops::Index<usize> for ReverseView<'a, T> {
 
 /// Create a reverse view of the vector for indexing.
 #[inline]
-pub fn rview(x: &[Limb]) -> ReverseView<Limb> {
+pub fn rview(x: &[Limb]) -> ReverseView<'_, Limb> {
     ReverseView {
         inner: x,
     }
@@ -556,7 +556,7 @@ pub fn large_add(x: &mut VecType, y: &[Limb]) -> Option<()> {
 /// ```
 ///
 /// We get the following results:
-
+///
 /// ```text
 /// mul/small:long          time:   [220.23 ns 221.47 ns 222.81 ns]
 /// Found 4 outliers among 100 measurements (4.00%)
