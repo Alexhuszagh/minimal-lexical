@@ -163,7 +163,7 @@ pub fn compute_error_scaled<F: Float>(q: i32, mut w: u64, lz: i32) -> ExtendedFl
     // Want to normalize the float, but this is faster than ctlz on most architectures.
     let hilz = (w >> 63) as i32 ^ 1;
     w <<= hilz;
-    let power2 = power(q as i32) + F::EXPONENT_BIAS - hilz - lz - 62;
+    let power2 = power(q) + F::EXPONENT_BIAS - hilz - lz - 62;
 
     ExtendedFloat {
         mant: w,
