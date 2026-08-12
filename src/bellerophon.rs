@@ -57,7 +57,7 @@ pub fn bellerophon<F: Float>(num: &Number) -> ExtendedFloat {
 
     // Calculate our indexes for our extended-precision multiplication.
     // This narrowing cast is safe, since exponent must be in a valid range.
-    let exponent = num.exponent as i32 + BASE10_POWERS.bias;
+    let exponent = num.exponent + BASE10_POWERS.bias;
     let small_index = exponent % BASE10_POWERS.step;
     let large_index = exponent / BASE10_POWERS.step;
 

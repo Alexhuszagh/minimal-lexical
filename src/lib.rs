@@ -38,7 +38,14 @@
 // so we allow unused unsafe to clearly document safety guarantees.
 #![allow(unused_unsafe)]
 #![cfg_attr(feature = "lint", warn(unsafe_op_in_unsafe_fn))]
+// legacy_numeric_constants
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(
+    // stable in Rust 1.43.0
+    clippy::legacy_numeric_constants,
+    // stable in Rust 1.87.0
+    clippy::manual_is_multiple_of,
+)]
 
 #[cfg(all(feature = "alloc", not(feature = "std")))]
 extern crate alloc;

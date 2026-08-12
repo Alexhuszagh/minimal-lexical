@@ -66,7 +66,7 @@ impl StackVec {
     /// The number of items the vector can hold.
     #[inline]
     pub const fn capacity(&self) -> usize {
-        bigint::BIGINT_LIMBS as usize
+        bigint::BIGINT_LIMBS
     }
 
     /// Append an item to the vector, without bounds checking.
@@ -264,7 +264,7 @@ impl Eq for StackVec {
 impl cmp::PartialOrd for StackVec {
     #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-        Some(bigint::compare(self, other))
+        Some(self.cmp(other))
     }
 }
 
