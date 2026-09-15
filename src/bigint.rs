@@ -648,7 +648,7 @@ pub fn shl_bits(x: &mut VecType, n: usize) -> Option<()> {
 #[inline]
 pub fn shl_limbs(x: &mut VecType, n: usize) -> Option<()> {
     debug_assert!(n != 0);
-    if n + x.len() > x.capacity() {
+    if n > x.capacity() - x.len() {
         None
     } else if !x.is_empty() {
         let len = n + x.len();
